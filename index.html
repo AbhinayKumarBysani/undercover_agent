@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d0a1a">
+<title>🎭 UNDERCOVER — the pass-the-phone party game</title>
+<style>
+:root{
+  --bg:#0d0a1a; --bg2:#130f26; --surface:#1a1433; --surface2:#231b44; --line:#3a2e6b;
+  --text:#f4f1ff; --muted:#b4abd6; --dim:#8a80b3;
+  --violet:#8b5cf6; --violet2:#a78bfa; --violet3:#c4b5fd; --magenta:#e879f9;
+  --gold:#fbbf24; --green:#34d399; --red:#fb7185;
+  --radius:22px; --radius-sm:14px;
+  --shadow:0 18px 40px -18px rgba(0,0,0,.75), 0 2px 0 rgba(255,255,255,.03) inset;
+  --display:"Avenir Next","Segoe UI","Helvetica Neue",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  --serif:Georgia,"Times New Roman",serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;min-height:100vh;min-height:100dvh;color:var(--text);font-family:var(--display);
+  font-size:17px;line-height:1.45;overflow-x:hidden;
+  background:
+    radial-gradient(900px 500px at 85% -10%,rgba(232,121,249,.16),transparent 60%),
+    radial-gradient(800px 600px at -10% 10%,rgba(139,92,246,.22),transparent 60%),
+    radial-gradient(700px 500px at 50% 110%,rgba(99,60,200,.18),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  -webkit-tap-highlight-color:transparent;
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+img,svg{max-width:100%}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  background:rgba(13,10,26,.72);border-bottom:1px solid rgba(139,92,246,.18)}
+.topbar-in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.brand{display:flex;align-items:center;gap:8px;font-weight:900;letter-spacing:.14em;font-size:15px;background:none;border:0;padding:6px 0}
+.brand .m{font-size:22px;letter-spacing:0}
+.top-actions{margin-left:auto;display:flex;gap:8px}
+.icon-btn{min-width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--surface);
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;font-size:15px;font-weight:700;transition:transform .12s,background .2s}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn .lbl{display:none}
+@media (min-width:560px){.icon-btn .lbl{display:inline}}
+
+/* ---------- layout ---------- */
+main{max-width:760px;margin:0 auto;padding:18px 16px calc(40px + var(--safe-b))}
+.screen.enter{animation:screenIn .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)) ,var(--surface);
+  border:1px solid rgba(139,92,246,.22);border-radius:var(--radius);padding:22px 18px;box-shadow:var(--shadow);margin-bottom:18px}
+@media (min-width:560px){.panel{padding:28px 28px}}
+.kicker{font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--violet3)}
+h1,h2,h3{margin:0;line-height:1.1}
+h2{font-size:clamp(26px,6.4vw,34px);font-weight:900;letter-spacing:-.01em;margin:6px 0 10px}
+h3{font-size:20px;font-weight:800}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.center{text-align:center}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 140px}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:12px 20px;border-radius:18px;
+  border:1px solid var(--line);background:var(--surface2);font-weight:800;font-size:17px;letter-spacing:.01em;text-decoration:none;
+  transition:transform .12s ease,box-shadow .2s ease,filter .2s,opacity .2s;user-select:none;-webkit-user-select:none}
+.btn:active:not(:disabled){transform:translateY(1px) scale(.975)}
+.btn:focus-visible,.icon-btn:focus-visible,.deck-card:focus-visible,.vote-btn:focus-visible{outline:3px solid var(--violet3);outline-offset:3px}
+.btn-primary{border:0;color:#fff;background:linear-gradient(135deg,#7c3aed 0%,#a855f7 55%,#d946ef 100%);
+  box-shadow:0 14px 30px -12px rgba(168,85,247,.85),0 1px 0 rgba(255,255,255,.25) inset}
+.btn-primary:hover:not(:disabled){filter:brightness(1.08)}
+.btn-xl{min-height:68px;font-size:21px;border-radius:22px;width:100%;letter-spacing:.06em}
+.btn-ghost{background:transparent}
+.btn-danger{border-color:rgba(251,113,133,.5);background:rgba(251,113,133,.12);color:#ffd5dc}
+.btn-block{width:100%}
+.btn:disabled{opacity:.42;cursor:not-allowed;filter:saturate(.4);box-shadow:none}
+.btn-primary:not(:disabled).pulse{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 14px 30px -12px rgba(168,85,247,.85)}50%{box-shadow:0 14px 44px -8px rgba(217,70,239,.95)}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;text-align:center;padding:8px 4px 6px;margin-bottom:10px}
+.hero-art{width:min(250px,64vw);height:auto;display:block;margin:0 auto -6px;filter:drop-shadow(0 26px 40px rgba(139,92,246,.45))}
+.hero-art .float{animation:float 5.5s ease-in-out infinite;transform-origin:50% 50%}
+.hero-art .beam{animation:beam 5.5s ease-in-out infinite}
+.hero-art .eye{animation:blink 6s infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+@keyframes beam{0%,100%{opacity:.55}50%{opacity:.9}}
+@keyframes blink{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.1)}}
+.hero-art .eye{transform-box:fill-box;transform-origin:center}
+.logo{font-weight:900;font-size:clamp(42px,13vw,76px);letter-spacing:.08em;line-height:1;margin:6px 0 8px;
+  background:linear-gradient(180deg,#fff 10%,#d8ccff 55%,#a78bfa 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo .mask{-webkit-text-fill-color:initial;color:initial;font-size:.62em;vertical-align:.12em;margin-right:.08em}
+.tagline{font-family:var(--serif);font-style:italic;font-size:clamp(18px,4.6vw,22px);color:var(--violet3);margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:4px 0 16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:rgba(139,92,246,.14);
+  border:1px solid rgba(167,139,250,.28);font-size:14px;font-weight:700;color:#e6defe}
+.hero-cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.hero-cta .btn{flex:1 1 150px;max-width:240px}
+
+/* ---------- setup ---------- */
+.field{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:14px 0;border-bottom:1px dashed rgba(167,139,250,.2)}
+.field:last-of-type{border-bottom:0}
+.field-label{font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px}
+.field-label small{display:block;font-weight:600;font-size:13px;color:var(--dim)}
+.field-ico{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:22px;background:rgba(139,92,246,.16);flex:none}
+.stepper{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:4px}
+.stepper button{width:48px;height:48px;border-radius:14px;border:0;background:var(--surface2);font-size:24px;font-weight:900;line-height:1;transition:transform .1s,background .2s}
+.stepper button:active:not(:disabled){transform:scale(.9);background:var(--violet)}
+.stepper button:disabled{opacity:.35}
+.stepper input{width:54px;text-align:center;background:transparent;border:0;font-size:24px;font-weight:900;-moz-appearance:textfield;appearance:textfield;padding:0}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper input:focus{outline:none;color:var(--violet3)}
+.equation{margin:16px 0 8px;padding:14px;border-radius:16px;text-align:center;font-weight:900;font-size:clamp(22px,6vw,28px);letter-spacing:.04em;
+  background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.35);color:#c9fbe8;transition:background .25s,border-color .25s,color .25s}
+.equation small{display:block;font-size:12px;letter-spacing:.16em;font-weight:800;opacity:.75;text-transform:uppercase;margin-bottom:2px}
+.equation.bad{background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.45);color:#ffd0d8;animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.msgs{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px;min-height:4px}
+.msg{font-size:15px;font-weight:700;padding:9px 12px;border-radius:12px}
+.msg.err{background:rgba(251,113,133,.12);color:#ffd0d8}
+.msg.warn{background:rgba(251,191,36,.12);color:#fde7b0}
+.msg.ok{background:rgba(52,211,153,.1);color:#c9fbe8}
+.hint{font-size:14px;color:var(--dim);margin-top:10px;text-align:center}
+.carry{margin-top:12px;font-size:14px;text-align:center;color:var(--violet3);font-weight:700}
+
+/* ---------- info sections ---------- */
+.benefits{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:18px}
+@media(min-width:620px){.benefits{grid-template-columns:repeat(3,1fr)}}
+.benefit{background:var(--surface);border:1px solid rgba(139,92,246,.18);border-radius:18px;padding:16px;display:flex;gap:12px;align-items:flex-start}
+.benefit .b-ico{font-size:26px;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(232,121,249,.2));flex:none}
+.benefit h3{font-size:17px;margin-bottom:4px}
+.benefit p{font-size:14.5px;color:var(--muted);margin:0}
+.steps{list-style:none;padding:0;margin:8px 0 0;counter-reset:s}
+.steps li{position:relative;padding:12px 0 12px 58px;min-height:58px;border-left:2px dashed rgba(167,139,250,.25);margin-left:20px;padding-left:36px}
+.steps li:last-child{border-left-color:transparent}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:-21px;top:8px;width:40px;height:40px;border-radius:50%;
+  display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#7c3aed,#d946ef);box-shadow:0 8px 18px -8px rgba(217,70,239,.9)}
+.steps b{display:block;font-size:17px}
+.steps span{color:var(--muted);font-size:15px}
+details.faq{border:1px solid rgba(139,92,246,.22);border-radius:16px;background:var(--bg2);margin-bottom:10px;overflow:hidden}
+details.faq summary{list-style:none;cursor:pointer;padding:16px 50px 16px 16px;font-weight:800;position:relative;min-height:54px}
+details.faq summary::-webkit-details-marker{display:none}
+details.faq summary::after{content:"+";position:absolute;right:16px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:9px;
+  display:grid;place-items:center;background:var(--surface2);font-size:20px;transition:transform .25s}
+details.faq[open] summary::after{content:"–";transform:translateY(-50%) rotate(180deg)}
+details.faq .faq-body{padding:0 16px 16px;color:var(--muted);font-size:15.5px;animation:screenIn .3s}
+
+/* ---------- wizard ---------- */
+.dots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0 16px}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);transition:all .25s}
+.dots i.done{background:var(--violet)}
+.dots i.now{background:var(--magenta);transform:scale(1.35);box-shadow:0 0 0 4px rgba(232,121,249,.2)}
+.big-input{width:100%;min-height:66px;font-size:26px;font-weight:800;text-align:center;border-radius:18px;border:2px solid var(--line);
+  background:var(--bg2);padding:10px 14px;transition:border-color .2s,box-shadow .2s}
+.big-input:focus{outline:none;border-color:var(--violet2);box-shadow:0 0 0 5px rgba(139,92,246,.2)}
+.error{color:#ffc2cd;font-weight:700;min-height:24px;margin:8px 0;text-align:center;font-size:15px}
+.name-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.name-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--surface2);font-weight:700;font-size:15px}
+.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:15px;color:#fff;flex:none;
+  background:hsl(var(--h,270) 70% 52%);box-shadow:0 0 0 2px rgba(255,255,255,.12) inset}
+.avatar.lg{width:46px;height:46px;font-size:19px}
+
+/* ---------- order list ---------- */
+.order-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.order-item{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:8px;padding:8px;border-radius:18px;background:var(--bg2);
+  border:1px solid var(--line);transition:transform .15s,box-shadow .2s,background .2s;touch-action:pan-y}
+.order-item.dragging{z-index:5;position:relative;background:var(--surface2);box-shadow:0 18px 30px -10px rgba(0,0,0,.8),0 0 0 2px var(--violet2);transition:none}
+.order-item.drop-target{box-shadow:0 0 0 2px rgba(232,121,249,.6)}
+.handle{width:40px;height:48px;border-radius:12px;border:0;background:transparent;font-size:20px;color:var(--dim);touch-action:none;cursor:grab}
+.seat{font-size:12px;font-weight:900;color:var(--violet3);width:32px;text-align:center;line-height:1.1}
+.seat b{display:block;font-size:20px;color:var(--text)}
+.order-item input{min-width:0;width:100%;min-height:48px;border-radius:12px;border:1px solid transparent;background:transparent;font-size:19px;font-weight:800;padding:6px 8px}
+.order-item input:focus{outline:none;border-color:var(--violet2);background:var(--surface)}
+.arrows{display:flex;gap:6px}
+.arrows button{width:42px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:17px;font-weight:900}
+.arrows button:disabled{opacity:.3}
+.arrows button:active:not(:disabled){transform:scale(.92)}
+.toggle-row{display:flex;align-items:center;gap:12px;margin-top:18px;padding:12px;border-radius:16px;background:var(--bg2);border:1px solid var(--line)}
+.switch{width:56px;height:34px;border-radius:999px;border:0;background:var(--surface2);position:relative;flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--violet)}
+.switch[aria-checked="true"]::after{transform:translateX(22px)}
+.text-input{width:100%;min-height:50px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);padding:10px 14px;font-size:17px;font-weight:700;margin-top:10px}
+.text-input:focus{outline:none;border-color:var(--violet2)}
+
+/* ---------- groups ---------- */
+.group-card{display:flex;align-items:center;gap:10px;padding:12px;border-radius:18px;background:var(--bg2);border:1px solid var(--line);margin-bottom:10px}
+.group-main{flex:1;min-width:0;text-align:left;background:transparent;border:0;padding:6px;border-radius:12px}
+.group-main:active{transform:scale(.99)}
+.group-name{font-weight:900;font-size:18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:900;letter-spacing:.06em;background:rgba(139,92,246,.22);color:var(--violet3)}
+.badge.warn{background:rgba(251,191,36,.16);color:#fde7b0}
+.badge.ok{background:rgba(52,211,153,.16);color:#bff7df}
+.badge.bad{background:rgba(251,113,133,.18);color:#ffd0d8}
+.group-names{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- deal ---------- */
+.progress{height:12px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);overflow:hidden;margin:10px 0 6px}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,#7c3aed,#e879f9);border-radius:999px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.progress-label{font-weight:800;font-size:16px;text-align:center}
+.instruct{border-radius:18px;padding:14px 16px;background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(232,121,249,.08));border:1px solid rgba(167,139,250,.3);margin:14px 0}
+.instruct b{font-size:17px}
+.instruct ul{margin:8px 0 0;padding-left:20px}
+.instruct li{margin:2px 0}
+.secret-note{font-size:14.5px;color:var(--violet3);font-weight:700;margin-top:8px}
+.seat-strip{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.seat-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px 6px 6px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);font-size:14px;font-weight:700}
+.seat-pill .avatar{width:26px;height:26px;font-size:12px}
+.seat-pill.seen{border-color:rgba(52,211,153,.4)}
+.seat-pill.now{border-color:var(--magenta);box-shadow:0 0 0 3px rgba(232,121,249,.18)}
+.seat-pill .st{font-size:11px;letter-spacing:.08em;font-weight:900;color:var(--dim)}
+.seat-pill.seen .st{color:var(--green)}
+.seat-pill.now .st{color:var(--magenta)}
+.deck{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px;margin-top:12px}
+@media(min-width:560px){.deck{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}}
+.deck-card{position:relative;aspect-ratio:3/4;border-radius:18px;border:0;padding:0;background:transparent;perspective:900px;animation:deal .5s backwards cubic-bezier(.2,.8,.2,1)}
+@keyframes deal{from{opacity:0;transform:translateY(24px) rotate(-6deg) scale(.9)}}
+.card-face{position:absolute;inset:0;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  box-shadow:0 14px 26px -14px rgba(0,0,0,.9);overflow:hidden}
+.card-back{background:
+  radial-gradient(circle at 50% 42%,rgba(255,255,255,.18) 0 18%,transparent 19%),
+  repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 8px,transparent 8px 16px),
+  linear-gradient(160deg,#7c3aed,#4c1d95 60%,#2e1065);border:2px solid rgba(196,181,253,.5)}
+.card-back .glyph{font-size:34px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+.card-back .num{font-size:12px;font-weight:900;letter-spacing:.18em;color:rgba(255,255,255,.75)}
+.deck.pickable .deck-card:not(.used) .card-back{transition:transform .18s}
+.deck.pickable .deck-card:not(.used):hover .card-back{transform:translateY(-4px) rotate(-1deg)}
+.deck.pickable .deck-card:not(.used):active .card-back{transform:scale(.95)}
+.deck.pickable .deck-card:not(.used){animation:deal .5s backwards cubic-bezier(.2,.8,.2,1),wiggle 3.2s 1s ease-in-out infinite}
+@keyframes wiggle{0%,92%,100%{transform:none}95%{transform:rotate(-2.5deg)}98%{transform:rotate(2.5deg)}}
+.deck-card.used .card-face{background:repeating-linear-gradient(-45deg,#1a1433 0 10px,#1f1840 10px 20px);border:2px dashed rgba(167,139,250,.28)}
+.deck-card.used .glyph{font-size:24px;opacity:.85}
+.deck-card.used .num{font-size:11px;font-weight:900;letter-spacing:.1em;color:var(--green);text-align:center;padding:0 4px}
+.deck-card.used .who{font-size:12px;color:var(--muted);font-weight:700;max-width:92%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.deck:not(.pickable) .deck-card:not(.used){opacity:.7}
+
+/* ---------- overlays ---------- */
+.overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:18px;padding-bottom:calc(18px + var(--safe-b));
+  background:rgba(8,5,18,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:fade .25s}
+.overlay.solid{background:radial-gradient(600px 400px at 50% 30%,rgba(139,92,246,.35),transparent 70%),#0b0816}
+@keyframes fade{from{opacity:0}}
+.sheet{width:100%;max-width:460px;max-height:calc(100dvh - 36px);overflow:auto;background:var(--surface);border:1px solid rgba(167,139,250,.3);border-radius:26px;padding:24px 20px;
+  box-shadow:0 30px 70px -20px rgba(0,0,0,.9);animation:pop .35s cubic-bezier(.2,1.2,.3,1)}
+@keyframes pop{from{opacity:0;transform:translateY(20px) scale(.94)}}
+.sheet h2{text-align:center}
+.sheet .big-emoji{font-size:58px;text-align:center;line-height:1;margin-bottom:6px}
+.sheet .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.sheet .actions .btn{flex:1 1 140px}
+.handoff-name{font-size:clamp(34px,10vw,52px);font-weight:900;text-align:center;line-height:1.05;margin:10px 0 6px;word-break:break-word;
+  background:linear-gradient(180deg,#fff,#d8ccff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.phone-anim{display:block;margin:0 auto 4px;width:84px;height:84px}
+.phone-anim .ph{animation:pass 2.2s ease-in-out infinite;transform-origin:50% 80%}
+@keyframes pass{0%,100%{transform:translateX(-10px) rotate(-10deg)}50%{transform:translateX(10px) rotate(10deg)}}
+
+.reveal-stage{width:100%;max-width:420px;perspective:1400px}
+.reveal-card{position:relative;width:100%;aspect-ratio:3/4.1;max-height:calc(100dvh - 160px);transform-style:preserve-3d;animation:flip .9s .15s cubic-bezier(.3,1.3,.4,1) both;margin:0 auto}
+@keyframes flip{from{transform:rotateY(180deg) scale(.85)}to{transform:rotateY(0) scale(1)}}
+.reveal-card .face{position:absolute;inset:0;border-radius:28px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center}
+.reveal-card .front{background:
+   radial-gradient(500px 300px at 50% 0%,rgba(232,121,249,.28),transparent 60%),
+   linear-gradient(180deg,#241a4a,#150f2e);border:2px solid rgba(196,181,253,.55);box-shadow:0 30px 80px -20px rgba(139,92,246,.7)}
+.reveal-card .backface{transform:rotateY(180deg);background:linear-gradient(160deg,#7c3aed,#4c1d95 60%,#2e1065);border:2px solid rgba(196,181,253,.5);font-size:80px}
+.rv-name{font-size:clamp(22px,6vw,28px);font-weight:900;color:var(--violet3);display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap}
+.rv-label{font-size:13px;letter-spacing:.24em;font-weight:900;color:var(--dim);margin-top:auto;text-transform:uppercase}
+.rv-word{font-weight:900;line-height:1.02;letter-spacing:.01em;margin:10px 0 auto;word-break:break-word;overflow-wrap:anywhere;text-transform:uppercase;
+  font-size:clamp(40px,14vw,76px);background:linear-gradient(180deg,#fff 30%,#e9ddff);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 6px 20px rgba(232,121,249,.35))}
+.rv-word.m{font-size:clamp(32px,10vw,56px)}
+.rv-word.s{font-size:clamp(26px,8vw,44px)}
+.rv-tip{font-size:15px;color:var(--muted);font-weight:600}
+.reveal-actions{margin-top:16px}
+
+/* ---------- discussion / vote ---------- */
+.starter-hero{text-align:center;padding:10px 0 4px}
+.starter-hero .avatar{margin:8px auto;width:86px;height:86px;font-size:36px;box-shadow:0 0 0 6px rgba(232,121,249,.25),0 18px 40px -10px rgba(232,121,249,.7);animation:popin .6s cubic-bezier(.2,1.4,.3,1)}
+@keyframes popin{from{transform:scale(.3);opacity:0}}
+.starter-name{font-size:clamp(32px,9vw,46px);font-weight:900;line-height:1.05;word-break:break-word}
+.order-flow{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:8px}
+.order-flow li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:16px;background:var(--bg2);border:1px solid var(--line);font-weight:800;font-size:17px;animation:screenIn .4s backwards}
+.order-flow li.first{border-color:var(--magenta);background:linear-gradient(90deg,rgba(232,121,249,.16),transparent)}
+.order-flow .pos{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:14px;background:var(--surface2);flex:none}
+.order-flow .tag{margin-left:auto;font-size:12px;letter-spacing:.1em;color:var(--magenta);font-weight:900}
+.loop-note{text-align:center;color:var(--dim);font-size:14px;margin-top:8px}
+.vote-status{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center}
+.stat b{display:block;font-size:26px;font-weight:900}
+.stat span{font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.lives{display:flex;gap:6px;justify-content:center;margin-top:4px;font-size:20px}
+.vote-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.vote-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 14px;border-radius:18px;border:1px solid var(--line);background:var(--bg2);
+  font-weight:900;font-size:19px;text-align:left;transition:transform .12s,background .2s,border-color .2s}
+.vote-btn:hover:not(:disabled){border-color:var(--violet2);background:var(--surface2)}
+.vote-btn:active:not(:disabled){transform:scale(.98)}
+.vote-btn .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vote-btn .go{font-size:13px;letter-spacing:.12em;color:var(--violet3)}
+.vote-btn:disabled{opacity:.55;cursor:not-allowed}
+.vote-btn.out .nm{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:3px}
+
+/* ---------- result ---------- */
+.result-banner{text-align:center;border-radius:26px;padding:26px 16px;margin-bottom:16px;position:relative;overflow:hidden;
+  border:1px solid rgba(255,255,255,.12);box-shadow:var(--shadow)}
+.result-banner.civ{background:radial-gradient(500px 260px at 50% 0%,rgba(52,211,153,.35),transparent 70%),linear-gradient(180deg,#123a33,#0f1f25)}
+.result-banner.uc{background:radial-gradient(500px 260px at 50% 0%,rgba(232,121,249,.4),transparent 70%),linear-gradient(180deg,#3b1350,#1a0f2e)}
+.result-banner .big{font-size:clamp(34px,10vw,54px);font-weight:900;line-height:1.02;letter-spacing:.02em;animation:popin .7s cubic-bezier(.2,1.4,.3,1)}
+.result-banner p{font-size:18px;margin:10px 0 0;font-weight:700}
+.words-reveal{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.wr{border-radius:18px;padding:14px;text-align:center;background:var(--bg2);border:1px solid var(--line)}
+.wr span{display:block;font-size:12px;letter-spacing:.14em;font-weight:900;color:var(--dim);text-transform:uppercase}
+.wr b{display:block;font-size:clamp(20px,6vw,28px);font-weight:900;margin-top:4px;word-break:break-word}
+.wr.uc{border-color:rgba(232,121,249,.45)}
+.agent-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.points-list{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.pt{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);font-weight:800;font-size:15px}
+.pt .plus{color:var(--gold)}
+.board{width:100%;border-collapse:separate;border-spacing:0 6px;margin-top:6px}
+.board th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:900;text-align:right;padding:0 8px}
+.board th:first-child{text-align:left}
+.board td{background:var(--bg2);padding:10px 8px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.board td:first-child{border-radius:14px 0 0 14px;text-align:left;max-width:0;width:46%}
+.board td:last-child{border-radius:0 14px 14px 0}
+.board .who{display:flex;align-items:center;gap:8px;overflow:hidden}
+.board .who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .pts{color:var(--gold);font-size:18px}
+.board tr.lead td{background:linear-gradient(90deg,rgba(251,191,36,.14),var(--bg2))}
+.board tr.gain td{animation:glow 1.4s ease-out}
+@keyframes glow{0%{box-shadow:inset 0 0 0 999px rgba(232,121,249,.25)}100%{box-shadow:none}}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.empty{color:var(--dim);text-align:center;padding:14px}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:70;overflow:hidden}
+.confetti i{position:absolute;top:-20px;width:10px;height:16px;border-radius:3px;opacity:.95;animation:fall linear forwards}
+@keyframes fall{to{transform:translate3d(var(--dx),110vh,0) rotate(var(--r))}}
+.toast{position:fixed;left:50%;bottom:calc(20px + var(--safe-b));transform:translateX(-50%);z-index:80;background:#2a2152;border:1px solid var(--violet2);
+  padding:12px 18px;border-radius:14px;font-weight:800;box-shadow:0 18px 40px -12px rgba(0,0,0,.8);animation:toast 2.6s forwards;max-width:92vw;text-align:center}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,16px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,8px)}}
+.check-row{display:flex;align-items:center;gap:10px;margin-top:12px;padding:12px;border-radius:14px;background:var(--bg2);font-weight:700;font-size:15px}
+.check-row input{width:22px;height:22px;accent-color:var(--violet)}
+footer{text-align:center;color:var(--dim);font-size:13px;margin-top:8px}
+@media (max-width:380px){
+  main{padding-left:10px;padding-right:10px}
+  .panel{padding:18px 12px}
+  .field-ico{display:none}
+  .stepper button{width:42px;height:46px}
+  .stepper input{width:44px}
+  .handle{width:30px}
+  .seat{width:24px;font-size:0}
+  .seat b{font-size:18px}
+  .arrows button{width:36px}
+  .order-item{gap:6px;padding:6px}
+  .board td{padding:9px 5px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <button class="brand" type="button" data-action="goHome" aria-label="UNDERCOVER home"><span class="m">🎭</span>UNDERCOVER</button>
+    <div class="top-actions">
+      <button class="icon-btn" type="button" data-action="openScores" aria-label="Scoreboard">🏆<span class="lbl">Scores</span></button>
+      <button class="icon-btn" type="button" data-action="openClear" aria-label="Clear game">🗑️<span class="lbl">Clear</span></button>
+    </div>
+  </div>
+</header>
+<main id="app" aria-live="polite"></main>
+<div id="modal-root"></div>
+<div id="fx-root"></div>
+<noscript><p style="text-align:center;padding:20px">UNDERCOVER needs JavaScript turned on.</p></noscript>
+
+<script>
+"use strict";
+/* =====================================================================
+   WORD BANK — 2,500 associated pairs, 5,000 globally unique words.
+   Format: "WordA|WordB" separated by ";"  (Civilians get A, Undercover gets B)
+   ===================================================================== */
+const WORD_BANK_RAW = "Apple|Pear;Orange|Grapefruit;Lemon|Lime;Mango|Papaya;Strawberry|Raspberry;Blueberry|Blackberry;Cherry|Plum;Peach|Apricot;Watermelon|Muskmelon;Grapes|Raisins;Kiwi|Passion Fruit;Guava|Pomegranate;Fig|Date;Coconut|Pineapple;Banana|Jackfruit;Lychee|Rambutan;Chikoo|Custard Apple;Amla|Gooseberry;Jamun|Mulberry;Cranberry|Blackcurrant;Avocado|Olive;Carrot|Radish;Onion|Garlic;Potato|Yam;Tomato|Capsicum;Cabbage|Lettuce;Cauliflower|Broccoli;Spinach|Methi;Peas|Beans;Cucumber|Zucchini;Pumpkin|Bottle Gourd;Brinjal|Okra;Beetroot|Turnip;Ginger|Turmeric;Green Chilli|Black Pepper;Celery|Leek;Coriander|Mint;Basil|Oregano;Mushroom|Tofu;Bitter Gourd|Drumstick;Rice|Wheat;Bread|Bun;Roti|Naan;Paratha|Puri;Dosa|Uttapam;Idli|Dhokla;Poha|Upma;Oats|Cornflakes;Flour|Semolina;Pasta|Noodles;Spaghetti|Macaroni;Lasagna|Ravioli;Biryani|Pulao;Khichdi|Pongal;Fried Rice|Hakka Noodles;Bagel|Croissant;Toast|Sandwich;Pancake|Waffle;Muffin|Cupcake;Cracker|Rusk;Pizza|Burger;Samosa|Kachori;Pakora|Vada;Pani Puri|Bhel Puri;Vada Pav|Pav Bhaji;Momos|Spring Roll;Taco|Burrito;Sushi|Ramen;Hot Dog|Sausage Roll;French Fries|Potato Wedges;Chips|Popcorn;Nachos|Pretzels;Kebab|Tikka;Shawarma|Frankie;Soup|Stew;Salad|Raita;Curry|Korma;Dal|Sambar;Rasam|Kadhi;Chole|Rajma;Paneer|Cheese;Butter|Ghee;Curd|Buttermilk;Omelette|Scrambled Eggs;Fried Chicken|Chicken Wings;Fish Fry|Prawn Curry;Steak|Pork Chop;Ham|Bacon;Meatball|Kofta;Cake|Pastry;Ice Cream|Kulfi;Chocolate|Toffee;Candy|Lollipop;Jalebi|Imarti;Gulab Jamun|Rasgulla;Ladoo|Barfi;Kheer|Payasam;Brownie|Fudge;Donut|Churros;Pie|Tart;Pudding|Custard;Jelly|Jam;Honey|Maple Syrup;Sugar|Jaggery;Cotton Candy|Marshmallow;Gummy Bear|Jelly Beans;Mithai|Peda;Rasmalai|Sandesh;Mysore Pak|Soan Papdi;Cheesecake|Tiramisu;Sundae|Milkshake;Popsicle|Ice Lolly;Coffee|Tea;Milk|Cream;Juice|Smoothie;Lemonade|Iced Tea;Coke|Pepsi;Sprite|Fanta;Water|Soda;Beer|Wine;Whiskey|Rum;Vodka|Gin;Champagne|Cocktail;Lassi|Falooda;Coconut Water|Sugarcane Juice;Hot Chocolate|Horlicks;Espresso|Cappuccino;Latte|Mocha;Green Tea|Lemon Tea;Chai|Kahwa;Energy Drink|Sports Drink;Salt|Pepper;Ketchup|Mustard;Vinegar|Soy Sauce;Chutney|Pickle;Cinnamon|Clove;Cardamom|Saffron;Cumin|Fennel;Olive Oil|Coconut Oil;Lion|Tiger;Leopard|Cheetah;Wolf|Fox;Rabbit|Hare;Horse|Donkey;Zebra|Giraffe;Elephant|Rhino;Hippo|Crocodile;Camel|Llama;Cow|Buffalo;Goat|Sheep;Pig|Boar;Deer|Antelope;Monkey|Gorilla;Chimpanzee|Orangutan;Bear|Panda;Koala|Kangaroo;Squirrel|Chipmunk;Mouse|Hamster;Rat|Mole;Hedgehog|Porcupine;Bat|Owl;Raccoon|Skunk;Otter|Beaver;Seal|Walrus;Sea Lion|Penguin;Polar Bear|Arctic Fox;Dolphin|Whale;Shark|Stingray;Octopus|Squid;Crab|Lobster;Shrimp|Oyster;Jellyfish|Starfish;Seahorse|Clownfish;Turtle|Tortoise;Frog|Toad;Snake|Lizard;Chameleon|Iguana;Eagle|Hawk;Parrot|Peacock;Crow|Raven;Sparrow|Pigeon;Duck|Goose;Swan|Flamingo;Hen|Rooster;Ostrich|Emu;Woodpecker|Kingfisher;Vulture|Falcon;Pelican|Seagull;Bee|Wasp;Butterfly|Moth;Ant|Termite;Mosquito|Housefly;Spider|Scorpion;Ladybug|Beetle;Grasshopper|Locust;Dragonfly|Firefly;Caterpillar|Worm;Snail|Slug;Goldfish|Guppy;Salmon|Tuna;Catfish|Carp;Dinosaur|Dragon;Unicorn|Pegasus;Mermaid|Fairy;Ghost|Zombie;Vampire|Werewolf;Puppy|Kitten;Calf|Foal;Lamb|Piglet;Sun|Moon;Star|Planet;Comet|Meteor;Earth|Mars;Jupiter|Saturn;Venus|Mercury;Galaxy|Universe;Cloud|Fog;Rain|Snow;Thunder|Lightning;Storm|Cyclone;Tornado|Hurricane;Hail|Sleet;Rainbow|Sunset;Ice|Frost;Mountain|Hill;Volcano|Geyser;River|Stream;Lake|Pond;Ocean|Sea;Beach|Island;Desert|Savanna;Forest|Jungle;Valley|Canyon;Cave|Tunnel;Waterfall|Fountain;Glacier|Iceberg;Cliff|Ridge;Rock|Pebble;Sand|Mud;Soil|Clay;Gold|Silver;Copper|Bronze;Iron|Steel;Diamond|Ruby;Pearl|Coral;Emerald|Sapphire;Tree|Bush;Flower|Leaf;Rose|Lotus;Lily|Tulip;Sunflower|Daisy;Jasmine|Marigold;Orchid|Hibiscus;Cactus|Aloe Vera;Bamboo|Sugarcane;Pine|Oak;Palm Tree|Banana Tree;Grass|Moss;Seed|Sapling;Fire|Smoke;Spring|Autumn;Summer|Winter;Morning|Evening;Noon|Midnight;Day|Night;Airport|Railway Station;Bus Stop|Metro Station;Hotel|Hostel;Resort|Villa;House|Apartment;Hut|Tent;Palace|Castle;Fort|Tower;Temple|Church;Mosque|Gurudwara;School|College;University|Academy;Library|Bookstore;Hospital|Clinic;Pharmacy|Laboratory;Bank|Post Office;Mall|Supermarket;Shop|Kiosk;Restaurant|Cafe;Bakery|Sweet Shop;Cinema|Theatre;Museum|Art Gallery;Zoo|Aquarium;Park|Garden;Playground|Stadium;Gym|Swimming Pool;Office|Factory;Farm|Ranch;Village|Town;Harbour|Port;Bridge|Flyover;Road|Highway;Petrol Pump|Car Wash;Parking|Garage;Police Station|Court;Circus|Carnival;Amusement Park|Water Park;Salon|Spa;Bedroom|Living Room;Kitchen|Dining Room;Balcony|Terrace;Basement|Attic;Lift|Escalator;Staircase|Ladder;Garden Shed|Greenhouse;Classroom|Staff Room;Canteen|Food Court;Lighthouse|Watchtower;Parliament|Assembly;Planetarium|Observatory;Casino|Arcade;Beach Hut|Cottage;Space Station|Rocket;Doctor|Nurse;Dentist|Surgeon;Teacher|Professor;Student|Intern;Police|Soldier;Judge|Lawyer;Pilot|Air Hostess;Captain|Sailor;Chef|Waiter;Baker|Butcher;Farmer|Gardener;Fisherman|Hunter;Driver|Conductor;Mechanic|Electrician;Plumber|Carpenter;Painter|Sculptor;Singer|Dancer;Actor|Director;Writer|Poet;Journalist|Editor;Photographer|Cameraman;Tailor|Designer;Engineer|Architect;Scientist|Inventor;Astronaut|Alien;King|Queen;Prince|Princess;Knight|Warrior;Wizard|Witch;Pirate|Ninja;Cowboy|Sheriff;Detective|Spy;Clown|Joker;Magician|Juggler;Priest|Monk;Shopkeeper|Salesman;Accountant|Cashier;Receptionist|Secretary;Postman|Delivery Boy;Lifeguard|Swimmer;Coach|Referee;Goalkeeper|Defender;Batsman|Bowler;Mother|Father;Brother|Sister;Son|Daughter;Uncle|Aunt;Grandfather|Grandmother;Husband|Wife;Boyfriend|Girlfriend;Bride|Groom;Baby|Toddler;Teenager|Adult;Neighbour|Roommate;Friend|Classmate;Guest|Host;Tourist|Traveller;CEO|Founder;Chair|Stool;Sofa|Bed;Table|Desk;Cupboard|Wardrobe;Shelf|Drawer;Pillow|Cushion;Blanket|Quilt;Bedsheet|Towel;Curtain|Blinds;Carpet|Doormat;Lamp|Lantern;Bulb|Tube Light;Candle|Diya;Fan|Cooler;Heater|Air Conditioner;Fridge|Freezer;Oven|Microwave;Stove|Tandoor;Toaster|Grill;Kettle|Flask;Plate|Bowl;Cup|Mug;Glass|Bottle;Spoon|Fork;Knife|Scissors;Pan|Pot;Tray|Basket;Jug|Bucket;Broom|Mop;Soap|Shampoo;Toothbrush|Comb;Toothpaste|Mouthwash;Mirror|Window;Door|Gate;Lock|Latch;Key|Remote;Clock|Watch;Alarm|Bell;Calendar|Diary;Photo Frame|Painting;Vase|Flower Pot;Box|Bag;Suitcase|Backpack;Wallet|Purse;Umbrella|Raincoat;Hanger|Hook;Washing Machine|Dryer;Bin|Dustpan;Sponge|Scrubber;Torch|Matchbox;Battery|Charger;Plug|Switch;Wire|Rope;Thread|Wool;Needle|Pin;Button|Zip;Tape|Glue;Nail|Screw;Hammer|Spanner;Saw|Axe;Shovel|Rake;Pen|Pencil;Eraser|Sharpener;Ruler|Protractor;Notebook|Textbook;Crayon|Marker;Chalk|Duster;Blackboard|Whiteboard;Stapler|Paper Clip;Envelope|Postcard;Stamp|Sticker;Map|Globe;Compass|Binoculars;Calculator|Abacus;Laptop|Tablet;Phone|Smartwatch;Keyboard|Touchpad;Printer|Scanner;Speaker|Headphones;Earphones|Microphone;Television|Projector;Radio|Walkie-Talkie;Camera|Camcorder;Pendrive|Hard Disk;Router|Modem;Joystick|Controller;Robot|Drone;Shirt|T-Shirt;Jeans|Trousers;Shorts|Skirt;Dress|Gown;Saree|Lehenga;Kurta|Sherwani;Jacket|Coat;Sweater|Hoodie;Scarf|Shawl;Gloves|Socks;Cap|Hat;Helmet|Turban;Shoes|Sandals;Boots|Sneakers;Slippers|Flip Flops;Belt|Tie;Ring|Bracelet;Necklace|Chain;Earrings|Nose Ring;Bangles|Anklet;Sunglasses|Spectacles;Handbag|Clutch;Pajamas|Nightgown;Uniform|Suit;Swimsuit|Bikini;Crown|Tiara;Mask|Veil;Lipstick|Nail Polish;Perfume|Deodorant;Makeup|Mehendi;Car|Taxi;Bus|Train;Bike|Scooter;Bicycle|Tricycle;Auto Rickshaw|Cycle Rickshaw;Truck|Tractor;Van|Jeep;Ambulance|Fire Engine;Police Car|Limousine;Airplane|Helicopter;Jet|Glider;Hot Air Balloon|Parachute;Ship|Boat;Submarine|Yacht;Canoe|Kayak;Raft|Ferry;Metro|Tram;Skateboard|Roller Skates;Sledge|Ski;Cable Car|Chairlift;Bullock Cart|Horse Cart;Cricket|Baseball;Football|Rugby;Basketball|Volleyball;Tennis|Badminton;Table Tennis|Squash;Hockey|Golf;Boxing|Wrestling;Karate|Judo;Kabaddi|Kho Kho;Swimming|Diving;Running|Cycling;Marathon|Sprint;High Jump|Long Jump;Javelin|Discus;Archery|Shooting;Chess|Checkers;Carrom|Snooker;Ludo|Snakes and Ladders;Cards|Dice;Puzzle|Crossword;Sudoku|Rubik's Cube;Hide and Seek|Tag Game;Kite|Balloon;Yoga|Pilates;Gymnastics|Ballet;Skiing|Surfing;Skating|Bowling;Darts|Billiards;Fishing|Hunting;Hiking|Camping;Trophy|Medal;Cricket Bat|Hockey Stick;Whistle|Stopwatch;Umpire|Linesman;Olympics|World Cup;IPL|Premier League;PlayStation|Xbox;Mario|Sonic;PUBG|Free Fire;Minecraft|Roblox;Candy Crush|Subway Surfers;Guitar|Violin;Piano|Organ;Drum|Tabla;Flute|Saxophone;Trumpet|Trombone;Sitar|Veena;Harmonium|Accordion;Song|Poem;Concert|Festival;Movie|Series;Cartoon|Anime;Comedy|Drama;Horror|Thriller;Hero|Villain;Netflix|Amazon Prime;YouTube|Instagram;WhatsApp|Telegram;Facebook|Twitter;Google|Wikipedia;Android|iPhone;Windows|Mac;Superman|Batman;Spider-Man|Iron Man;Hulk|Thor;Harry Potter|Hermione;Mickey Mouse|Donald Duck;Tom|Jerry;Doraemon|Shinchan;Cinderella|Snow White;Aladdin|Genie;Shrek|Fiona;Elsa|Rapunzel;Pikachu|Charmander;Chhota Bheem|Motu Patlu;Bollywood|Hollywood;Oscar|Grammy;Newspaper|Magazine;Novel|Comic;Magic Show|Dance Show;Birthday|Anniversary;Wedding|Engagement;Party|Picnic;Diwali|Christmas;Holi|Navratri;Eid|Ramzan;Onam|Vishu;Halloween|Thanksgiving;New Year|Valentine's Day;Gift|Bouquet;Eye|Ear;Nose|Mouth;Hand|Foot;Finger|Toe;Arm|Leg;Knee|Elbow;Hair|Beard;Moustache|Eyebrow;Teeth|Tongue;Heart|Brain;Lungs|Kidney;Shoulder|Neck;Cough|Sneeze;Fever|Cold;Headache|Stomach Ache;Medicine|Injection;Capsule|Syrup;Bandage|Plaster;Wheelchair|Crutches;X-ray|Scan;Vitamin|Protein;Dream|Nightmare;Laugh|Smile;Cry|Shout;Walk|Run;Jump|Climb;Homework|Assignment;Maths|Science;History|Geography;English|Hindi;Physics|Chemistry;Biology|Botany;Essay|Letter;Salary|Bonus;Meeting|Interview;Email|Message;Report|Presentation;Laptop Bag|Briefcase;Cash|Cheque;Credit Card|Debit Card;Rupee|Dollar;Euro|Pound;Loan|EMI;Chili|Jalapeno;Chicken|Turkey;Sausage|Salami;Lunch|Dinner;Breakfast|Brunch;Almond|Cashew;Pistachio|Hazelnut;Shower|Bathtub;Sink|Wash Basin;Swing|Slide;Yo-yo|Spin Top;Ribbon|Bow;Brick|Cement;Moose|Elk;Jaguar|Panther;Python|Cobra;Macaw|Cockatoo;Anchovy|Sardine;Oasis|Mirage;Monkey Bars|Jungle Gym;Sleeping Bag|Camping Mat;Tripod|Selfie Stick;Pressure Cooker|Rice Cooker;Programmer|Hacker;YouTuber|Influencer;Sherlock|Watson;Tattoo|Piercing;Bulldozer|Crane;Speedboat|Sailboat;Passport|Visa;Ticket|Boarding Pass;Departure|Arrival;Exit|Entrance;Seat Belt|Airbag;Brake|Accelerator;Dhoti|Lungi;Mascara|Eyeliner;Heel|Ankle;High Five|Fist Bump;Handshake|Hug;Cut|Bruise;Fracture|Sprain;Hiccup|Burp;Stethoscope|Thermometer;Diet|Exercise;Dictionary|Atlas;Spelling Bee|Quiz;Monitor|Prefect;Annual Day|Sports Day;Field Trip|Science Fair;File|Folder;PowerPoint|Excel;Ice Hockey|Figure Skating;Weightlifting|Bodybuilding;Horse Riding|Polo;Poker|Uno;Pac-Man|Tetris;Penalty|Free Kick;Fielder|Wicketkeeper;Six|Boundary;Cheerleader|Mascot;Silver Medal|Bronze Medal;Match|Lighter;Krishna|Radha;Rapper|Rock Star;Hip Hop|Breakdance;Kathak|Bharatanatyam;CD|DVD;Scooby Doo|SpongeBob;Captain America|Black Widow;Catwoman|Wonder Woman;Frodo|Gandalf;Darth Vader|Yoda;Charlie Chaplin|Mr Bean;Peter Pan|Tinker Bell;Sitcom|Reality Show;Bigg Boss|KBC;News|Documentary;Flop|Blockbuster;MacBook|iPad;Chrome|Firefox;Snapchat|TikTok;Gmail|Outlook;Download|Upload;Bluetooth|Wi-Fi;Hotspot|Mobile Data;Screenshot|Screen Recording;Fingerprint|Face Unlock;Swiggy|Zomato;Ola|Rapido;Alexa|Siri;France|Italy;England|Scotland;Australia|New Zealand;Brazil|Argentina;Germany|Austria;Switzerland|Sweden;China|Japan;Pyramid|Mummy;Dubai|Singapore;Sri Lanka|Maldives;Nepal|Bhutan;Pakistan|Bangladesh;Taj Mahal|Red Fort;Gateway of India|India Gate;Charminar|Qutub Minar;Hawa Mahal|Mysore Palace;Rishikesh|Haridwar;Manali|Ladakh;Ooty|Kodaikanal;Shimla|Darjeeling;Andaman|Goa;Disneyland|Universal Studios;Win|Lose;Hello|Goodbye;Question|Answer;Buy|Sell;Read|Write;Copy|Paste;Lost|Found;Landing|Takeoff;Black|White;Nephew|Niece;Raksha Bandhan|Bhai Dooj;Durga Puja|Ganesh Chaturthi;Republic Day|Independence Day;Plastic Bag|Cloth Bag;Ram|Sita;Hanuman|Ganesha;Shiva|Vishnu;Ramayana|Mahabharata;Bible|Quran;Panchatantra|Akbar Birbal;Dracula|Frankenstein;Prime Minister|President;Aloo|Gobi;Complan|Boost;Oreo|Jim Jam;KitKat|Five Star;Lays|Kurkure;Frooti|Maaza;Thums Up|Limca;Pizza Hut|Domino's;McDonald's|KFC;Starbucks|Cafe Coffee Day;Burger King|Subway;Nike|Adidas;Puma|Reebok;Zara|H&M;Gucci|Prada;Fidget Spinner|Pop It;Aadhaar|PAN Card;Race Car|Go-Kart;Butler|Maid;Locksmith|Blacksmith;Milkman|Paperboy;Beethoven|Mozart;Elvis|Michael Jackson;Taylor Swift|Shakira;A R Rahman|Ilaiyaraaja;Shah Rukh Khan|Salman Khan;Amitabh Bachchan|Rajinikanth;Prabhas|Allu Arjun;Virat Kohli|Rohit Sharma;Dhoni|Sachin;Messi|Ronaldo;Federer|Nadal;Serena|Venus Williams;PV Sindhu|Saina;Romeo|Juliet;Einstein|Newton;Gandhi|Nehru;Elon Musk|Bill Gates;Steve Jobs|Mark Zuckerberg;Ambani|Ratan Tata;Tata|Mahindra;Maruti|Hyundai;Honda|Toyota;BMW|Mercedes;Ferrari|Lamborghini;Royal Enfield|Harley Davidson;Splendor|Pulsar;KGF|Pushpa;Sholay|DDLJ;3 Idiots|PK;Lagaan|Dangal;Avatar|Titanic;Toy Story|Finding Nemo;Ice Age|Madagascar;Matrix|Inception;Fast and Furious|Mission Impossible;Godzilla|King Kong;Ross|Rachel;Breaking Bad|Money Heist;Stranger Things|Squid Game;Lemur|Meerkat;Yak|Bison;Centipede|Millipede;Tawa|Kadai;Belan|Chakla;Sipper|Water Bottle;Sanitizer|Hand Wash;Asthma|Allergy;Scuba Diving|Snorkeling;Zipline|Rock Climbing;Stargazing|Bird Watching;Red Velvet|Black Forest;Marie|Monaco;Curly Hair|Straight Hair;Low Tide|High Tide;Sit-ups|Squats;Biceps|Triceps;Arranged Marriage|Love Marriage;Sorbet|Gelato;Measuring Cup|Teaspoon;Mortar|Pestle;Aluminium Foil|Cling Wrap;Sofa Bed|Recliner;Coaster|Placemat;Hammerhead|Great White;Ox|Bull;Stallion|Mare;Best Man|Bridesmaid;Yellow Card|Red Card;Gong|Cymbal;Tambourine|Maracas;Choir|Orchestra;AirPods|Earbuds;Subtitle|Dubbing;Sidekick|Wingman;Bugs Bunny|Daffy Duck;Road Runner|Coyote;Tweety|Sylvester;Garfield|Odie;Snoopy|Charlie Brown;Dexter|Johnny Bravo;Phineas|Ferb;Dora|Diego;Teletubbies|Barney;Wolverine|Deadpool;Black Panther|Doctor Strange;Aquaman|Green Lantern;Dobby|Gollum;R2-D2|C-3PO;Cluedo|Monopoly;Jenga|Lego;Hangman|Tic Tac Toe;Solitaire|Minesweeper;Rummy|Teen Patti;GTA|Call of Duty;FIFA|PES;Street Fighter|Mortal Kombat;Undo|Redo;Double Click|Right Click;Dark Mode|Light Mode;Voice Note|Voicemail;Podcast|Audiobook;Chin|Cheek;Pupil|Iris;Fist|Palm;Strawberry Jam|Marmalade;Tabasco|Sriracha;Hyena|Jackal;Herring|Mackerel;Bulldog|Boxer Dog;Poodle|Pomeranian;Labrador|Golden Retriever;Blog|Vlog;Lorry|Tanker;Cuff Link|Tie Pin;Pocket Square|Handkerchief;Humpty Dumpty|Jack and Jill;Verse|Chorus;Bongo|Conga;Upstairs|Downstairs;Sweeping|Mopping;Mother-in-law|Daughter-in-law;Agarbatti|Dhoop;Cadbury|Nestle;Budgie|Cockatiel;Honey Bee|Bumble Bee;North Pole|South Pole;Sahara Desert|Gobi Desert;Bus Driver|Truck Driver;Cookie Jar|Biscuit Tin;Fountain Pen|Ballpoint;Gel Pen|Sketch Pen;Qawwali|Ghazal;Prepaid|Postpaid;USB Drive|Memory Card;Headstand|Handstand;Cartwheel|Somersault;Jumping Jacks|Burpees;Oil Paint|Watercolour;Fax Machine|Photocopier;Pie Chart|Bar Chart;Sensex|Nifty;Bull Market|Bear Market;Mutual Fund|Fixed Deposit;Ajanta|Ellora;Coorg|Munnar;Udaipur|Jodhpur;Shillong|Gangtok;Piranha|Barracuda;Beanie|Earmuffs;Bindi|Sindoor;Scrabble|Boggle;Sequel|Prequel;Samsung|OnePlus;Virus|Bacteria;Netherlands|Belgium;Las Vegas|Macau;Twins|Triplets;Elf|Dwarf;Goblin|Troll;Thepla|Khakhra;Rolex|Omega;Sauna|Jacuzzi;Parakeet|Lovebirds;Starter|Dessert;Red Bull|Monster Energy;Lord of the Rings|Narnia;Mojito|Margarita;Nescafe|Bru;Colgate|Pepsodent;Dove|Lux;Surf Excel|Ariel;Head and Shoulders|Clinic Plus;Vim|Pril;Britannia|Sunfeast;Good Day|Bourbon;Pringles|Doritos;Gems|Smarties;Melody|Eclairs;Haldiram|Bikanervala;Kinley|Aquafina;Real Juice|Tropicana;Ferrero Rocher|Lindt;Snickers|Mars Bar;M&M|Skittles;Nivea|Vaseline;Boroline|Boroplus;Iodex|Moov;Crocin|Dolo;Disprin|Saridon;Gaana|JioSaavn;Zepto|Blinkit;BigBasket|DMart;Myntra|Ajio;PhonePe|Google Pay;Hotstar|SonyLIV;Reddit|Quora;Yahoo|Hotmail;Discord|Slack;Photoshop|Canva;Valorant|Counter-Strike;Road Rash|Need for Speed;Panchayat|Kota Factory;Mirzapur|Sacred Games;Roadies|Splitsvilla;Khatron Ke Khiladi|Fear Factor;CID|Crime Patrol;Power Rangers|Ninja Turtles;Beyblade|Bakugan;Dragon Ball|Naruto;Jawan|Pathaan;Hera Pheri|Welcome;Golmaal|Dhamaal;Dhoom|Race;Krrish|Ra.One;Kabir Singh|Arjun Reddy;Rocky|Rambo;Terminator|RoboCop;Barbie|Oppenheimer;Sonu Nigam|Shaan;Shreya Ghoshal|Sunidhi Chauhan;Badshah|Honey Singh;BTS|Blackpink;Coldplay|U2;Eminem|50 Cent;Lady Gaga|Madonna;Rihanna|Beyonce;Bumrah|Shami;Jadeja|Ashwin;Ganguly|Dravid;Sehwag|Gambhir;Leander Paes|Mahesh Bhupathi;Viswanathan Anand|Magnus Carlsen;Mbappe|Haaland;Djokovic|Andy Murray;Kobe|LeBron;Lewis Hamilton|Max Verstappen;Rome|Venice;Paris|London;Sydney|Melbourne;Mauritius|Seychelles;Phuket|Pattaya;Manchester United|Chelsea;Arsenal|Liverpool;CSK|Mumbai Indians;RCB|KKR;Ahmedabad|Surat;Indore|Bhopal;Durga|Kali;Lakshmi|Saraswati;Arjuna|Karna;Atom|Molecule;Tamil|Telugu;Kannada|Malayalam;Spanish|Portuguese;Sanskrit|Latin;Bengali|Odia;Marathi|Gujarati;Hang Gliding|Paragliding;Free Hit|No Ball;Slam Dunk|Three Pointer;VCR|DVD Player;Mentos|Tic Tac;Lynx|Cougar;Mongoose|Weasel;Gazelle|Impala;Alligator|Komodo Dragon;Viper|Rattlesnake;Anaconda|Boa;Heron|Stork;Toucan|Hornbill;Mynah|Bulbul;Quail|Partridge;Clam|Mussel;Cod|Haddock;Pomfret|Surmai;Hilsa|Rohu;Orca|Beluga;Armadillo|Pangolin;Sloth|Anteater;Gerbil|Guinea Pig;Mule|Pony;Flea|Tick;Lice|Bedbug;Leech|Earthworm;Tamarind|Kokum;Mosambi|Kinnow;Walnut|Pecan;Peanut|Makhana;Chia|Flaxseed;Quinoa|Millet;Ragi|Jowar;Bajra|Maize;Barley|Rye;Lentils|Chickpeas;Cheddar|Mozzarella;Feta|Parmesan;Hummus|Guacamole;Tortilla|Pita;Baguette|Ciabatta;Pav|Kulcha;Bhatura|Luchi;Appam|Neer Dosa;Khandvi|Fafda;Mathri|Shakarpara;Gujiya|Modak;Kaju Katli|Kalakand;Shrikhand|Basundi;Rabri|Malai;Malpua|Ghevar;Chikki|Gajak;Phirni|Shahi Tukda;Panini|Club Sandwich;Risotto|Paella;Chowmein|Chop Suey;Manchurian|Chilli Paneer;Dumpling|Wonton;Kimchi|Sauerkraut;Tempura|Teriyaki;Quesadilla|Enchilada;Falafel|Tikki;Cutlet|Bonda;Tequila|Sake;Toddy|Feni;Jaljeera|Aam Panna;Thandai|Badam Milk;Rooh Afza|Tang;Bournvita|Milo;Frappe|Cold Coffee;Americano|Filter Coffee;Matcha|Chamomile;Armchair|Rocking Chair;Bean Bag|Floor Cushion;Bunk Bed|Cot;Crib|Cradle;Hammock|Deck Chair;Bookshelf|Cabinet;Chest|Trunk;Locker|Safe;Hairbrush|Hair Dryer;Razor|Trimmer;Nail Cutter|Tweezers;Face Wash|Scrub;Conditioner|Hair Oil;Sunscreen|Moisturiser;Body Lotion|Talcum Powder;Toothpick|Floss;Foundation|Concealer;Blush|Bronzer;Manicure|Pedicure;Grater|Peeler;Ladle|Spatula;Tongs|Whisk;Rolling Pin|Cookie Cutter;Chopping Board|Mixing Bowl;Lunchbox|Thermos;Jar|Canister;Gas Cylinder|Induction Stove;Chimney|Exhaust Fan;Vacuum Cleaner|Feather Duster;Compost|Fertilizer;Highlighter|Sticky Notes;Scrapbook|Photo Album;Binder|Clipboard;Pastel|Charcoal;Easel|Sketchbook;Paintbrush|Palette;Railway Platform|Bus Depot;Toll Plaza|Checkpost;Showroom|Workshop;Cubicle|Cabin;Conference|Seminar;ICU|Emergency Ward;Barber Shop|Beauty Parlour;Tailor Shop|Boutique;Pet Shop|Vet Clinic;Butcher Shop|Fish Market;Vegetable Market|Fruit Stall;Multiplex|Single Screen;Arena|Colosseum;Golf Course|Cricket Ground;Skating Rink|Bowling Alley;Safari|National Park;Orchard|Vineyard;Farmhouse|Bungalow;Mansion|Penthouse;Treehouse|Playhouse;Kennel|Stable;Barn|Silo;Bay|Gulf;Meadow|Prairie;Field|Pasture;Canal|Creek;Dam|Reservoir;Well|Hand Pump;Bay of Bengal|Arabian Sea;USA|Canada;Mexico|Spain;Egypt|Morocco;Kenya|Tanzania;Greece|Portugal;Thailand|Vietnam;Malaysia|Indonesia;Ireland|Iceland;Norway|Finland;Saudi Arabia|Qatar;Delhi|Mumbai;Bangalore|Hyderabad;Chennai|Kolkata;Pune|Nagpur;Jaipur|Lucknow;Kochi|Trivandrum;Vizag|Vijayawada;Patna|Ranchi;Chandigarh|Amritsar;Kerala|Tamil Nadu;Punjab|Haryana;Bihar|Jharkhand;Gujarat|Rajasthan;Andhra Pradesh|Telangana;Maharashtra|Madhya Pradesh;Assam|Meghalaya;Uttarakhand|Himachal;Odisha|West Bengal;Tokyo|Osaka;New York|Los Angeles;Toronto|Vancouver;Berlin|Munich;Barcelona|Madrid;Amsterdam|Copenhagen;Istanbul|Cairo;Bangkok|Bali;Hong Kong|Shanghai;Cape Town|Johannesburg;Rio|Sao Paulo;Vet|Zookeeper;Psychologist|Counsellor;Midwife|Nanny;Cook|Caterer;Bartender|Barista;Clerk|Typist;Librarian|Bookseller;Firefighter|Paramedic;DJ|VJ;Radio Jockey|News Anchor;Comedian|Mimic;Potter|Weaver;Mason|Labourer;Shepherd|Cowherd;Florist|Decorator;Wedding Planner|Event Manager;Real Estate Agent|Broker;Travel Agent|Tour Guide;Bouncer|Bodyguard;Nun|Saint;Pandit|Maulvi;Emperor|Sultan;Maharaja|Nawab;Mayor|Governor;MLA|MP;Sarpanch|Collector;Cousin|Sibling;Bachelor|Spinster;Ex|Crush;Partner|Colleague;Senior|Junior;Leader|Follower;Rowing|Sailing;Snowboarding|Ice Skating;Bungee Jumping|Skydiving;Parasailing|Jet Skiing;Triathlon|Decathlon;Hurdles|Relay;Sumo|WWE;Taekwondo|Kung Fu;T20|ODI;Century|Fifty;Yorker|Googly;LBW|Run Out;Catch|Stumping;Goalpost|Crossbar;Corner|Throw-in;Offside|Handball;Dribble|Tackle;Header|Volley;Dunk|Layup;Rebound|Assist;Ace|Smash;Serve|Rally;Deuce|Advantage;Bishop|Rook;Checkmate|Stalemate;Birdie|Par;Musical|Opera;Stand-up Comedy|Mimicry;Manga|Graphic Novel;Short Story|Fable;Fairy Tale|Myth;Legend|Folklore;Haiku|Limerick;Rap|Beatbox;Jazz|Blues;Classical|Folk;Bhajan|Kirtan;Lullaby|Nursery Rhyme;Anthem|Hymn;Jingle|Theme Song;Album|Single;Playlist|Mixtape;Spotify|Apple Music;Vinyl|Cassette;Karaoke|Antakshari;Duet|Solo;Gig|Tour;Encore|Curtain Call;Rehearsal|Audition;Trailer|Teaser;Remake|Reboot;Stuntman|Body Double;Producer|Choreographer;Filmfare|IIFA;Baahubali|RRR;Kantara|Vikram;Drishyam|Andhadhun;Chak De India|Bhaag Milkha Bhaag;Andaz Apna Apna|Chupke Chupke;Taare Zameen Par|Stanley Ka Dabba;Jab We Met|Yeh Jawaani Hai Deewani;Om Shanti Om|Main Hoon Na;Don|Agneepath;Singham|Simmba;Hunger Games|Divergent;Twilight|Vampire Diaries;Frozen|Tangled;Coco|Encanto;Harley Quinn|Poison Ivy;Thanos|Loki;Avengers|Justice League;Fantastic Four|Guardians of the Galaxy;Hogwarts|Wonderland;Ron|Hagrid;Dumbledore|Voldemort;Goofy|Pluto;Winnie the Pooh|Tigger;Popeye|Olive Oyl;Oggy|Pink Panther;Nobita|Gian;Pokemon|Digimon;Goku|Vegeta;Luffy|Zoro;Aamir Khan|Akshay Kumar;Hrithik|Tiger Shroff;Ranbir|Ranveer;Deepika|Alia;Katrina|Kareena;Priyanka|Aishwarya;Madhuri|Sridevi;Kajol|Rani Mukerji;Mahesh Babu|Jr NTR;Chiranjeevi|Pawan Kalyan;Vijay|Ajith;Kamal Haasan|Mohanlal;Yash|Rishab Shetty;Nayanthara|Samantha;Tom Cruise|Brad Pitt;Leonardo DiCaprio|Johnny Depp;Will Smith|Dwayne Johnson;Jackie Chan|Bruce Lee;Scarlett Johansson|Angelina Jolie;Kishore Kumar|Mohammed Rafi;Lata Mangeshkar|Asha Bhosle;Arijit Singh|Atif Aslam;Justin Bieber|Ed Sheeran;Ariana Grande|Selena Gomez;Drake|Kanye;Bruno Mars|The Weeknd;Katy Perry|Miley Cyrus;Kapil Sharma|Bharti Singh;CarryMinati|Bhuvan Bam;Hardik|KL Rahul;Shubman Gill|Yashasvi;Smriti Mandhana|Harmanpreet;Neeraj Chopra|Milkha Singh;Sunil Chhetri|Bhaichung Bhutia;Mary Kom|Nikhat Zareen;Neymar|Salah;Beckham|Zidane;Pele|Maradona;Sharapova|Sania Mirza;Usain Bolt|Carl Lewis;Shaq|Michael Jordan;Muhammad Ali|Mike Tyson;John Cena|Undertaker;Khali|Big Show;Akbar|Shah Jahan;Shivaji|Maharana Pratap;Ashoka|Chandragupta;Tipu Sultan|Rani Lakshmibai;Bhagat Singh|Subhash Chandra Bose;Ambedkar|Sardar Patel;Abdul Kalam|Vikram Sarabhai;Tagore|Premchand;Shakespeare|Charles Dickens;Galileo|Copernicus;Edison|Nikola Tesla;Darwin|Mendel;Columbus|Vasco da Gama;Napoleon|Alexander;Cleopatra|Julius Caesar;Mother Teresa|Florence Nightingale;Picasso|Van Gogh;Leonardo|Michelangelo;Sony|LG;Dell|HP;Lenovo|Asus;Canon|Nikon;Xiaomi|Realme;Vivo|Oppo;Bose|JBL;Amazon|Flipkart;Paytm|Mobikwik;Jio|Airtel;Vodafone|BSNL;Maggi|Yippee;Kellogg's|Quaker;Bisleri|Himalayan;Amul|Mother Dairy;Patanjali|Dabur;Himalaya|Biotique;Lakme|Maybelline;Asian Paints|Berger;Godrej|Whirlpool;Bajaj|TVS;Suzuki|Yamaha;Kia|MG;Audi|Volvo;Porsche|Bugatti;Indigo|Air India;Emirates|Qatar Airways;Vande Bharat|Rajdhani;Shatabdi|Duronto;Titan|Fastrack;Fossil|Casio;Levi's|Wrangler;Bata|Woodland;Crocs|Birkenstock;Ray-Ban|Oakley;Parle-G|Tiger Biscuit;Bingo|Too Yumm;Slice|Appy Fizz;Mountain Dew|7Up;Mirinda|Gold Spot;Dairy Milk|Silk;Bournville|Toblerone;Perk|Munch;Alpenliebe|Pulse;Center Fresh|Happydent;Vicks|Strepsils;Dettol|Savlon;Lifebuoy|Santoor;Medimix|Margo;Sunsilk|Pantene;Garnier|L'Oreal;Gillette|Old Spice;Fogg|Wild Stone;Sensodyne|Close Up;Harpic|Lizol;Rin|Tide;Good Knight|All Out;Hit|Baygon;Odonil|Air Wick;Eveready|Duracell;Philips|Havells;Prestige|Hawkins;Milton|Cello;Tupperware|Borosil";
+const WORD_BANK = WORD_BANK_RAW.split(";").map(function (s) { return s.split("|"); });
+
+/* =====================================================================
+   CONSTANTS
+   ===================================================================== */
+const MIN_PLAYERS = 3;
+const MAX_PLAYERS = 20;
+const DEFAULT_NAMES = ["Abhi", "Supradeep", "Sahu", "Srav", "Tarun"];
+const CIVILIAN_WIN_POINTS = 2;
+const UNDERCOVER_WIN_POINTS = 3;
+const CIVILIAN_LOSSES_TO_LOSE = 3;
+const MAX_NAME_LENGTH = 16;
+const STORAGE_KEY = "undercover.savedGroups.v1";
+
+/* =====================================================================
+   STATE  (session only — scores live in memory; only saved groups use localStorage)
+   ===================================================================== */
+function freshRoundState() {
+  return {
+    roles: {},            // playerId -> "civilian" | "agent"
+    words: {},            // playerId -> secret word
+    currentPair: null,    // [civilianWord, undercoverWord]
+    currentPairIndex: -1,
+    seen: [],             // playerIds who have seen their word
+    cardOwners: [],       // cardIndex -> playerId | null  (single-use cards)
+    dealIndex: 0,         // index into players (seating order) of who is picking now
+    dealStage: "handoff", // "handoff" | "pick" | "reveal"
+    revealCard: null,
+    starter: null,
+    speakingOrder: [],
+    eliminated: [],       // playerIds voted out (always civilians — an agent vote ends the round)
+    votes: [],            // [{round, playerId, role}]
+    pendingVote: null,
+    roundOver: false,
+    winner: null,         // "civilians" | "undercover"
+    caughtAgent: null,
+    roundPoints: {}
+  };
+}
+
+function freshState() {
+  return Object.assign({
+    screen: "setup",
+    totalPlayers: 5,
+    civilians: 4,
+    agents: 1,
+    players: [],          // [{id, name}] in seating order
+    draftNames: [],
+    wizardIndex: 0,
+    groupName: "",
+    saveGroup: true,
+    activeGroupId: null,
+    round: 0,
+    civilianWins: 0,
+    undercoverWins: 0,
+    scores: {},           // name -> {points, civilianWins, undercoverWins}
+    usedPairs: [],        // indexes of pairs used this session
+    lastAgents: [],       // names of last round's agents
+    modal: null
+  }, freshRoundState());
+}
+
+let state = freshState();
+
+/* =====================================================================
+   UTILITIES
+   ===================================================================== */
+function esc(v) {
+  return String(v).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function randInt(n) {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    const limit = Math.floor(0xFFFFFFFF / n) * n;
+    do { window.crypto.getRandomValues(buf); } while (buf[0] >= limit);
+    return buf[0] % n;
+  }
+  return Math.floor(Math.random() * n);
+}
+function shuffle(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randInt(i + 1);
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function clampInt(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function hueFor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return [262, 290, 316, 200, 170, 24, 340, 230, 145, 45][h % 10];
+}
+function initial(name) { return esc((name.trim()[0] || "?").toUpperCase()); }
+function avatar(name, cls) {
+  return '<span class="avatar ' + (cls || "") + '" style="--h:' + hueFor(name) + '" aria-hidden="true">' + initial(name) + "</span>";
+}
+function playerById(id) { return state.players.find(function (p) { return p.id === id; }) || null; }
+function nameOf(id) { const p = playerById(id); return p ? p.name : "?"; }
+function numberWord(n) { return ["Zero", "One", "Two", "Three"][n] || String(n); }
+
+/* =====================================================================
+   VALIDATION
+   ===================================================================== */
+function validateConfig(total, civilians, agents) {
+  const errors = [];
+  const warnings = [];
+  const isInt = function (v) { return typeof v === "number" && Number.isInteger(v); };
+  if (!isInt(total) || !isInt(civilians) || !isInt(agents)) {
+    errors.push("Enter whole numbers for every field.");
+    return { valid: false, errors: errors, warnings: warnings };
+  }
+  if (total < MIN_PLAYERS) errors.push("Total players must be at least " + MIN_PLAYERS + ".");
+  if (total > MAX_PLAYERS) errors.push("Total players can be at most " + MAX_PLAYERS + ".");
+  if (civilians < 1) errors.push("You need at least 1 Civilian.");
+  if (agents < 1) errors.push("You need at least 1 Undercover Agent.");
+  if (civilians > total) errors.push("Civilians can't be more than total players.");
+  if (agents > total) errors.push("Undercover Agents can't be more than total players.");
+  if (civilians + agents !== total) errors.push("⚠️ Total players must equal Civilians + Undercover Agents.");
+  if (!errors.length && agents >= civilians) warnings.push("Agents equal or outnumber Civilians — a very hard game for Civilians.");
+  return { valid: errors.length === 0, errors: errors, warnings: warnings };
+}
+
+function validateNames(names) {
+  const seen = {};
+  for (let i = 0; i < names.length; i++) {
+    const n = (names[i] || "").trim();
+    if (!n) return { valid: false, error: "Seat " + (i + 1) + " needs a name.", index: i };
+    const key = n.toLowerCase();
+    if (seen[key]) return { valid: false, error: "\u201C" + n + "\u201D is used twice — names must be different.", index: i };
+    seen[key] = true;
+  }
+  return { valid: true, error: "", index: -1 };
+}
+
+function validateWordBank(bank) {
+  const all = [];
+  const pairKeys = {};
+  let exactPairRepeats = 0;
+  bank.forEach(function (p) {
+    all.push(p[0].toLowerCase(), p[1].toLowerCase());
+    const k = [p[0].toLowerCase(), p[1].toLowerCase()].sort().join("|");
+    if (pairKeys[k]) exactPairRepeats++;
+    pairKeys[k] = true;
+  });
+  const unique = new Set(all).size;
+  return {
+    pairs: bank.length,
+    totalWords: all.length,
+    uniqueWords: unique,
+    wordsInTwoPairs: all.length - unique,
+    exactPairRepeats: exactPairRepeats,
+    ok: bank.length > 0 && all.length === bank.length * 2 && unique === all.length && exactPairRepeats === 0
+  };
+}
+
+/* =====================================================================
+   SAVED GROUPS (localStorage — the only thing persisted)
+   ===================================================================== */
+function loadGroups() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.filter(function (g) { return g && Array.isArray(g.players); }) : [];
+  } catch (e) { return []; }
+}
+function saveGroups(list) {
+  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+}
+function clearStoredGroups() {
+  try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* storage unavailable */ }
+}
+function defaultGroupName(names) {
+  return names.length ? names[0] + "'s group (" + names.length + ")" : "My group";
+}
+function upsertCurrentGroup() {
+  const names = state.players.map(function (p) { return p.name; });
+  const groups = loadGroups();
+  const name = (state.groupName || "").trim() || defaultGroupName(names);
+  let g = state.activeGroupId ? groups.find(function (x) { return x.id === state.activeGroupId; }) : null;
+  if (!g) {
+    g = { id: "g" + Date.now().toString(36) + randInt(1e6).toString(36), name: name, players: names, updatedAt: Date.now() };
+    groups.unshift(g);
+  } else {
+    g.name = name; g.players = names; g.updatedAt = Date.now();
+  }
+  state.activeGroupId = g.id;
+  groups.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+  return saveGroups(groups.slice(0, 30));
+}
+
+/* =====================================================================
+   SETUP / PLAYER GENERATION
+   ===================================================================== */
+function setConfigValue(field, value) {
+  state[field] = value;
+}
+function stepConfig(field, delta) {
+  const cur = Number.isInteger(state[field]) ? state[field] : 0;
+  if (field === "totalPlayers") {
+    state.totalPlayers = clampInt(cur + delta, MIN_PLAYERS, MAX_PLAYERS);
+    if (Number.isInteger(state.agents) && state.agents >= 1 && state.agents < state.totalPlayers) {
+      state.civilians = state.totalPlayers - state.agents;           // auto-balance
+    }
+  } else if (field === "agents") {
+    state.agents = clampInt(cur + delta, 1, MAX_PLAYERS - 1);
+    if (Number.isInteger(state.totalPlayers) && state.agents < state.totalPlayers) {
+      state.civilians = state.totalPlayers - state.agents;           // auto-balance
+    }
+  } else if (field === "civilians") {
+    state.civilians = clampInt(cur + delta, 1, MAX_PLAYERS - 1);     // no auto-balance: validation shows mismatch
+  }
+}
+function autoFixConfig() {
+  let total = Number.isInteger(state.totalPlayers) ? clampInt(state.totalPlayers, MIN_PLAYERS, MAX_PLAYERS) : 5;
+  let agents = Number.isInteger(state.agents) ? clampInt(state.agents, 1, total - 1) : 1;
+  state.totalPlayers = total; state.agents = agents; state.civilians = total - agents;
+}
+function generatePlayerNames(count, existing) {
+  const names = [];
+  for (let i = 0; i < count; i++) {
+    names.push((existing && existing[i]) || DEFAULT_NAMES[i] || ("Player " + (i + 1)));
+  }
+  return names;
+}
+function setPlayersFromNames(names) {
+  state.players = names.map(function (n, i) { return { id: "p" + i, name: n.trim().slice(0, MAX_NAME_LENGTH) }; });
+  state.totalPlayers = state.players.length;
+}
+function movePlayer(from, to) {
+  if (to < 0 || to >= state.players.length || from === to) return;
+  const item = state.players.splice(from, 1)[0];
+  state.players.splice(to, 0, item);
+}
+
+/* =====================================================================
+   WORD SELECTION
+   ===================================================================== */
+function selectWordPair() {
+  if (state.usedPairs.length >= WORD_BANK.length) state.usedPairs = [];   // only after all 2,500 are used
+  const used = new Set(state.usedPairs);
+  let idx;
+  do { idx = randInt(WORD_BANK.length); } while (used.has(idx));
+  state.usedPairs.push(idx);
+  state.currentPairIndex = idx;
+  state.currentPair = [WORD_BANK[idx][0], WORD_BANK[idx][1]];
+  return state.currentPair;
+}
+
+/* =====================================================================
+   AGENT SELECTION — random, avoiding last round's agents where possible
+   ===================================================================== */
+function selectAgents(players, count, lastAgentNames) {
+  const last = new Set(lastAgentNames || []);
+  const fresh = shuffle(players.filter(function (p) { return !last.has(p.name); }));
+  const repeat = shuffle(players.filter(function (p) { return last.has(p.name); }));
+  let chosen;
+  if (fresh.length >= count) {
+    chosen = fresh.slice(0, count);                       // nobody from last round
+  } else {
+    chosen = fresh.concat(repeat.slice(0, count - fresh.length)); // as few repeats as possible
+  }
+  const sameSet = chosen.length === last.size && chosen.every(function (p) { return last.has(p.name); });
+  if (sameSet && players.length > count) {
+    // Only reachable when it is impossible to differ; kept as a safety net.
+    return shuffle(players).slice(0, count);
+  }
+  return chosen;
+}
+function assignRoles() {
+  const agents = selectAgents(state.players, state.agents, state.lastAgents);
+  const agentIds = new Set(agents.map(function (p) { return p.id; }));
+  state.roles = {}; state.words = {};
+  state.players.forEach(function (p) {
+    const isAgent = agentIds.has(p.id);
+    state.roles[p.id] = isAgent ? "agent" : "civilian";
+    state.words[p.id] = isAgent ? state.currentPair[1] : state.currentPair[0];
+  });
+  state.lastAgents = agents.map(function (p) { return p.name; });
+}
+function agentIds() { return state.players.filter(function (p) { return state.roles[p.id] === "agent"; }).map(function (p) { return p.id; }); }
+function civilianIds() { return state.players.filter(function (p) { return state.roles[p.id] === "civilian"; }).map(function (p) { return p.id; }); }
+
+/* =====================================================================
+   ROUND FLOW
+   ===================================================================== */
+function ensureScoreRows() {
+  state.players.forEach(function (p) {
+    if (!state.scores[p.name]) state.scores[p.name] = { points: 0, civilianWins: 0, undercoverWins: 0 };
+  });
+}
+function startRound() {
+  Object.assign(state, freshRoundState());
+  state.agents = clampInt(state.agents, 1, state.players.length - 1);
+  state.civilians = state.players.length - state.agents;
+  state.totalPlayers = state.players.length;
+  ensureScoreRows();
+  selectWordPair();
+  assignRoles();
+  state.cardOwners = state.players.map(function () { return null; });
+  state.round += 1;
+  state.screen = "deal";
+}
+function newRound() { startRound(); }
+
+/* ---- private reveal ---- */
+function currentDealPlayer() { return state.players[state.dealIndex] || null; }
+function confirmHandoff() {
+  if (state.screen !== "deal" || state.dealStage !== "handoff") return false;
+  state.dealStage = "pick";
+  return true;
+}
+function pickCard(cardIndex) {
+  if (state.screen !== "deal" || state.dealStage !== "pick") return false;
+  if (cardIndex < 0 || cardIndex >= state.cardOwners.length) return false;
+  if (state.cardOwners[cardIndex] !== null) return false;          // single-use card
+  const p = currentDealPlayer();
+  if (!p || state.seen.indexOf(p.id) !== -1) return false;
+  state.cardOwners[cardIndex] = p.id;
+  state.revealCard = cardIndex;
+  state.dealStage = "reveal";
+  return true;
+}
+function revealContent() {
+  // ONLY name + word. Never the role.
+  if (state.dealStage !== "reveal") return null;
+  const p = currentDealPlayer();
+  return p ? { name: p.name, word: state.words[p.id] } : null;
+}
+function hideReveal() {
+  if (state.screen !== "deal" || state.dealStage !== "reveal") return false;
+  const p = currentDealPlayer();
+  state.seen.push(p.id);
+  state.revealCard = null;
+  state.dealIndex += 1;
+  if (state.seen.length >= state.players.length) {
+    selectStarter();
+    state.screen = "discussion";
+  } else {
+    state.dealStage = "handoff";
+  }
+  return true;
+}
+
+/* ---- who starts ---- */
+function selectStarter() {
+  const idx = randInt(state.players.length);
+  state.starter = state.players[idx].id;
+  state.speakingOrder = [];
+  for (let i = 0; i < state.players.length; i++) {
+    state.speakingOrder.push(state.players[(idx + i) % state.players.length].id);
+  }
+  return state.starter;
+}
+
+/* ---- voting ---- */
+function civilianLossLimit() { return Math.min(CIVILIAN_LOSSES_TO_LOSE, civilianIds().length); }
+function canVoteFor(id) {
+  return state.screen === "vote" && !state.roundOver && !!playerById(id) && state.eliminated.indexOf(id) === -1;
+}
+function castVote(id) {
+  if (!canVoteFor(id)) return null;
+  const role = state.roles[id];
+  state.votes.push({ round: state.round, playerId: id, role: role });
+  return eliminatePlayer(id);
+}
+function eliminatePlayer(id) {
+  state.eliminated.push(id);
+  if (state.roles[id] === "agent") {
+    state.caughtAgent = id;
+    endRound("civilians");
+    return { type: "agent", id: id, roundOver: true };
+  }
+  const lost = state.eliminated.length;
+  if (lost >= civilianLossLimit()) {
+    endRound("undercover");
+    return { type: "civilian", id: id, roundOver: true };
+  }
+  return { type: "civilian", id: id, roundOver: false, lost: lost, limit: civilianLossLimit() };
+}
+
+/* ---- results & scoring ---- */
+function calculateRoundPoints(winner) {
+  const points = {};
+  const ids = winner === "civilians" ? civilianIds() : agentIds();
+  const each = winner === "civilians" ? CIVILIAN_WIN_POINTS : UNDERCOVER_WIN_POINTS;
+  ids.forEach(function (id) { points[nameOf(id)] = each; });
+  return points;
+}
+function applyScores(winner) {
+  ensureScoreRows();
+  const pts = calculateRoundPoints(winner);
+  Object.keys(pts).forEach(function (name) {
+    const row = state.scores[name];
+    row.points += pts[name];
+    if (winner === "civilians") row.civilianWins += 1; else row.undercoverWins += 1;
+  });
+  if (winner === "civilians") state.civilianWins += 1; else state.undercoverWins += 1;
+  state.roundPoints = pts;
+}
+function endRound(winner) {
+  if (state.roundOver) return;
+  state.roundOver = true;
+  state.winner = winner;
+  applyScores(winner);
+  state.screen = "result";
+}
+
+/* ---- reset ---- */
+function resetGame(alsoForgetGroups) {
+  if (alsoForgetGroups) clearStoredGroups();
+  state = freshState();
+}
+
+/* =====================================================================
+   VIEWS (pure: state -> HTML string)
+   ===================================================================== */
+const HERO_SVG = '<svg class="hero-art" viewBox="0 0 260 220" role="img" aria-label="A theatre mask split into two halves under a spotlight">' +
+  '<defs>' +
+  '<linearGradient id="gL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>' +
+  '<linearGradient id="gR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5d0fe"/><stop offset="1" stop-color="#c026d3"/></linearGradient>' +
+  '<radialGradient id="spot" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".6" stop-color="#a78bfa" stop-opacity=".08"/><stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></radialGradient>' +
+  '<clipPath id="cl"><rect x="0" y="0" width="130" height="220"/></clipPath><clipPath id="cr"><rect x="130" y="0" width="130" height="220"/></clipPath>' +
+  '</defs>' +
+  '<path class="beam" d="M105 0 L155 0 L235 210 L25 210 Z" fill="url(#spot)"/>' +
+  '<ellipse cx="130" cy="200" rx="78" ry="10" fill="#000" opacity=".35"/>' +
+  '<g class="float">' +
+  '<g clip-path="url(#cl)"><path d="M130 38 C 92 38 62 50 56 74 C 50 104 60 150 92 172 C 106 182 120 186 130 186 Z" fill="url(#gL)"/></g>' +
+  '<g clip-path="url(#cr)"><path d="M130 38 C 168 38 198 50 204 74 C 210 104 200 150 168 172 C 154 182 140 186 130 186 Z" fill="url(#gR)"/></g>' +
+  '<path d="M130 36 L130 188" stroke="#0d0a1a" stroke-width="3" stroke-dasharray="6 5"/>' +
+  '<path class="eye" d="M78 96 Q 96 82 114 96 Q 96 106 78 96 Z" fill="#0d0a1a"/>' +
+  '<path class="eye" d="M146 98 Q 164 88 182 98 Q 164 104 146 98 Z" fill="#0d0a1a"/>' +
+  '<path d="M84 80 Q 98 72 112 80" stroke="#2e1065" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+  '<path d="M148 86 Q 164 78 178 84" stroke="#4a044e" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+  '<path d="M100 140 Q 115 156 130 146" stroke="#2e1065" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+  '<path d="M130 146 Q 146 138 162 146" stroke="#4a044e" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+  '<circle cx="214" cy="40" r="4" fill="#fbbf24"/><circle cx="40" cy="58" r="3" fill="#e879f9"/><circle cx="226" cy="120" r="2.5" fill="#c4b5fd"/>' +
+  '<text x="203" y="78" font-size="26" fill="#fde68a" font-weight="900" font-family="Georgia,serif">?</text>' +
+  '</g></svg>';
+
+function viewSetup() {
+  const v = validateConfig(state.totalPlayers, state.civilians, state.agents);
+  const stats = validateWordBank(WORD_BANK);
+  const field = function (key, ico, label, sub, min, max) {
+    const val = Number.isInteger(state[key]) ? state[key] : "";
+    return '<div class="field">' +
+      '<label class="field-label" for="f-' + key + '"><span class="field-ico">' + ico + '</span><span>' + label + '<small>' + sub + '</small></span></label>' +
+      '<div class="stepper">' +
+      '<button type="button" data-action="step" data-field="' + key + '" data-delta="-1" aria-label="Decrease ' + label + '"' + (val !== "" && val <= min ? " disabled" : "") + '>−</button>' +
+      '<input id="f-' + key + '" type="number" inputmode="numeric" pattern="[0-9]*" min="' + min + '" max="' + max + '" value="' + val + '" data-input="config" data-field="' + key + '">' +
+      '<button type="button" data-action="step" data-field="' + key + '" data-delta="1" aria-label="Increase ' + label + '"' + (val !== "" && val >= max ? " disabled" : "") + '>+</button>' +
+      '</div></div>';
+  };
+  return '<div class="screen">' +
+    '<section class="hero" id="top">' + HERO_SVG +
+    '<h1 class="logo"><span class="mask">🎭</span>UNDERCOVER</h1>' +
+    '<p class="tagline">One phone. One secret word. Someone\u2019s word is different.</p>' +
+    '<div class="chips"><span class="chip">📴 Works offline</span><span class="chip">👥 3–20 players</span><span class="chip">🧠 ' + stats.pairs.toLocaleString() + ' word pairs</span></div>' +
+    '<div class="hero-cta"><button class="btn btn-primary" type="button" data-action="scrollTo" data-target="setup">⚡ Set up a game</button>' +
+    '<button class="btn" type="button" data-action="scrollTo" data-target="how">📖 How it works</button></div>' +
+    '</section>' +
+
+    '<section class="panel" id="setup" aria-labelledby="setup-title">' +
+    '<div class="kicker">Step 1 · Your table</div><h2 id="setup-title">Game setup</h2>' +
+    field("totalPlayers", "👥", "Total players", MIN_PLAYERS + " to " + MAX_PLAYERS, MIN_PLAYERS, MAX_PLAYERS) +
+    field("civilians", "🙂", "Civilians", "Get the common word", 1, MAX_PLAYERS - 1) +
+    field("agents", "🕵️", "Undercover Agents", "Get the different word", 1, MAX_PLAYERS - 1) +
+    '<div id="equation" class="equation' + (v.valid ? "" : " bad") + '">' + equationHTML() + '</div>' +
+    '<div id="validation" class="msgs">' + validationHTML(v) + '</div>' +
+    '<button id="autofix" type="button" class="btn btn-block btn-ghost" data-action="autofix"' + (v.valid ? " hidden" : "") + '>🪄 Fix it for me</button>' +
+    '<div style="height:10px"></div>' +
+    '<button id="startBtn" type="button" class="btn btn-primary btn-xl' + (v.valid ? " pulse" : "") + '" data-action="startSetup"' + (v.valid ? "" : " disabled") + '>🎭 START GAME</button>' +
+    '<p class="hint">Changing Players or Agents re-balances Civilians automatically.</p>' +
+    (state.round > 0 ? '<p class="carry">🏆 Scores carry over · ' + state.round + ' round' + (state.round === 1 ? "" : "s") + ' played this session</p>' : "") +
+    '</section>' +
+
+    '<section class="benefits" aria-label="Why play UNDERCOVER">' +
+    '<div class="benefit"><span class="b-ico">📱</span><div><h3>One phone is enough</h3><p>Pass it round the table. No accounts, no app store, no Wi‑Fi.</p></div></div>' +
+    '<div class="benefit"><span class="b-ico">🤫</span><div><h3>Roles stay secret</h3><p>You only ever see your name and your word, never whether you\u2019re the odd one out.</p></div></div>' +
+    '<div class="benefit"><span class="b-ico">🃏</span><div><h3>Single‑use cards</h3><p>Once you hide your word it\u2019s gone. Nobody can scroll back and peek.</p></div></div>' +
+    '</section>' +
+
+    '<section class="panel" id="how" aria-labelledby="how-title">' +
+    '<div class="kicker">The flow</div><h2 id="how-title">How it works</h2>' +
+    '<ol class="steps">' +
+    '<li><b>Seat everyone</b><span>Enter names one at a time, then drag them into the order you\u2019re sitting. Save the group for next time.</span></li>' +
+    '<li><b>Pick a card</b><span>The phone goes round. When your name pops up, tap OK, choose any face‑down card, read your word, hide it.</span></li>' +
+    '<li><b>Give clues</b><span>A random player starts; turns follow the seating order. Describe your word without saying it.</span></li>' +
+    '<li><b>Vote one at a time</b><span>Catch an Agent and Civilians win (+2 each). Lose ' + numberWord(CIVILIAN_LOSSES_TO_LOSE).toLowerCase() + ' Civilians and the Agents win (+3 each).</span></li>' +
+    '</ol></section>' +
+
+    '<section class="panel" id="faq" aria-labelledby="faq-title">' +
+    '<div class="kicker">Questions</div><h2 id="faq-title">FAQ</h2>' +
+    faq("Will I find out if I\u2019m the Undercover Agent?", "Not from the phone. Your card shows only your name and your word. Listen to everyone\u2019s clues: if they don\u2019t quite fit your word, you might be undercover. Roles are revealed only when someone is voted out, and every Agent is revealed at the end.") +
+    faq("Does the card I pick matter?", "All cards are face‑down and identical, so it\u2019s just for fun and fairness of feel. The game deals the roles when you tap, and it avoids giving the same people the Undercover role two rounds in a row whenever another choice exists.") +
+    faq("What happens when we vote out a Civilian?", "The round keeps going. That player is revealed as a Civilian, removed from voting, and you get another vote. If " + numberWord(CIVILIAN_LOSSES_TO_LOSE).toLowerCase() + " Civilians are voted out (or every Civilian, in tiny games), the Agents win.") +
+    faq("Will we get the same words again?", "Not in this session. There are " + stats.pairs.toLocaleString() + " pairs and " + stats.uniqueWords.toLocaleString() + " unique words, and a pair is never reused until all of them have been played.") +
+    faq("Is anything saved on my phone?", "Only the player groups you choose to save, so you can reuse names and seating. Scores live for this session only. 🗑️ Clear resets everything and can also forget saved groups.") +
+    faq("Does it work offline?", "Yes. It\u2019s a single file with no internet, fonts, images or libraries to load. Open it once and play anywhere.") +
+    '</section>' +
+    '<footer>🎭 UNDERCOVER · made for game night</footer>' +
+    '</div>';
+}
+function faq(q, a) {
+  return '<details class="faq"><summary>' + esc(q) + '</summary><div class="faq-body">' + esc(a) + '</div></details>';
+}
+function equationHTML() {
+  const t = Number.isInteger(state.totalPlayers) ? state.totalPlayers : "?";
+  const c = Number.isInteger(state.civilians) ? state.civilians : "?";
+  const a = Number.isInteger(state.agents) ? state.agents : "?";
+  const ok = t === c + a;
+  return '<small>Players = Civilians + Agents</small>' + t + ' ' + (ok ? "=" : "≠") + ' ' + c + ' + ' + a;
+}
+function validationHTML(v) {
+  if (v.valid) {
+    return v.warnings.map(function (w) { return '<div class="msg warn">⚠️ ' + esc(w) + '</div>'; }).join("") ||
+      '<div class="msg ok">✅ Ready: ' + state.civilians + ' Civilian' + (state.civilians === 1 ? "" : "s") + ' vs ' + state.agents + ' Undercover Agent' + (state.agents === 1 ? "" : "s") + '.</div>';
+  }
+  return v.errors.map(function (e) { return '<div class="msg err">' + esc(e) + '</div>'; }).join("");
+}
+
+function viewGroups() {
+  const groups = loadGroups();
+  const list = groups.map(function (g) {
+    const match = g.players.length === state.totalPlayers;
+    return '<div class="group-card">' +
+      '<button type="button" class="group-main" data-action="useGroup" data-id="' + esc(g.id) + '">' +
+      '<div class="group-name">' + esc(g.name) + ' <span class="badge ' + (match ? "ok" : "warn") + '">' + g.players.length + ' players</span></div>' +
+      '<div class="group-names">' + esc(g.players.join(" · ")) + '</div>' +
+      (match ? "" : '<div class="group-names" style="color:#fde7b0">Tap to switch the game to ' + g.players.length + ' players</div>') +
+      '</button>' +
+      '<button type="button" class="icon-btn" data-action="deleteGroup" data-id="' + esc(g.id) + '" aria-label="Delete group ' + esc(g.name) + '">✕</button>' +
+      '</div>';
+  }).join("");
+  return '<div class="screen"><section class="panel">' +
+    '<div class="kicker">Step 2 · Players</div><h2>Who\u2019s playing?</h2>' +
+    '<p class="muted">Use a saved group or start fresh. You set <b>' + state.totalPlayers + ' players</b>.</p>' +
+    list +
+    '<button type="button" class="btn btn-primary btn-block" data-action="newGroup" style="margin-top:6px">➕ Create a new group</button>' +
+    '<div style="height:10px"></div>' +
+    '<button type="button" class="btn btn-ghost btn-block" data-action="goHome">← Back to setup</button>' +
+    '</section></div>';
+}
+
+function viewNames() {
+  const i = state.wizardIndex;
+  const n = state.draftNames.length;
+  const dots = state.draftNames.map(function (_, k) { return '<i class="' + (k < i ? "done" : k === i ? "now" : "") + '"></i>'; }).join("");
+  const chips = state.draftNames.slice(0, i).map(function (nm, k) {
+    return '<span class="name-chip">' + avatar(nm) + (k + 1) + '. ' + esc(nm) + '</span>';
+  }).join("");
+  return '<div class="screen"><section class="panel center">' +
+    '<div class="kicker">Player ' + (i + 1) + ' of ' + n + '</div>' +
+    '<div class="dots" aria-hidden="true">' + dots + '</div>' +
+    '<h2>Name for seat ' + (i + 1) + '</h2>' +
+    '<p class="muted">Type a name, then tap ' + (i === n - 1 ? "Done" : "Next") + '. Go round the table in seating order if you can.</p>' +
+    '<label class="sr-only" for="wizardInput">Player ' + (i + 1) + ' name</label>' +
+    '<input id="wizardInput" class="big-input" type="text" maxlength="' + MAX_NAME_LENGTH + '" autocomplete="off" autocapitalize="words" enterkeyhint="' + (i === n - 1 ? "done" : "next") + '" value="' + esc(state.draftNames[i]) + '" data-enter="wizardNext">' +
+    '<div id="wizardError" class="error" role="alert"></div>' +
+    '<div class="row"><button type="button" class="btn" data-action="wizardBack">← Back</button>' +
+    '<button type="button" class="btn btn-primary" data-action="wizardNext">' + (i === n - 1 ? "✓ Done" : "Next →") + '</button></div>' +
+    (chips ? '<div class="name-chips">' + chips + '</div>' : "") +
+    '</section></div>';
+}
+
+function viewOrder() {
+  const items = state.players.map(function (p, i) {
+    return '<li class="order-item" data-index="' + i + '">' +
+      '<button type="button" class="handle" data-drag="' + i + '" aria-label="Drag to reorder ' + esc(p.name) + '">☰</button>' +
+      '<span class="seat">SEAT<b>' + (i + 1) + '</b></span>' +
+      '<input type="text" maxlength="' + MAX_NAME_LENGTH + '" value="' + esc(p.name) + '" aria-label="Name in seat ' + (i + 1) + '" data-input="orderName" data-index="' + i + '">' +
+      '<span class="arrows"><button type="button" data-action="moveUp" data-index="' + i + '" aria-label="Move ' + esc(p.name) + ' up"' + (i === 0 ? " disabled" : "") + '>↑</button>' +
+      '<button type="button" data-action="moveDown" data-index="' + i + '" aria-label="Move ' + esc(p.name) + ' down"' + (i === state.players.length - 1 ? " disabled" : "") + '>↓</button></span>' +
+      '</li>';
+  }).join("");
+  return '<div class="screen"><section class="panel">' +
+    '<div class="kicker">Step 3 · Seating</div><h2>Set the seating order</h2>' +
+    '<p class="muted">Drag ☰ or use the arrows so this list matches how you\u2019re sitting. Card picking and clue turns go round in this order. Tap a name to edit it.</p>' +
+    '<ol class="order-list" id="orderList">' + items + '</ol>' +
+    '<div class="toggle-row"><button type="button" class="switch" role="switch" aria-checked="' + state.saveGroup + '" data-action="toggleSave" aria-label="Save this group"></button>' +
+    '<div><b>Save this group</b><div class="muted" style="font-size:14px;margin:0">Reuse these names and seats next time.</div></div></div>' +
+    (state.saveGroup ? '<label class="sr-only" for="groupName">Group name</label><input id="groupName" class="text-input" type="text" maxlength="40" placeholder="' + esc(defaultGroupName(state.players.map(function (p) { return p.name; }))) + '" value="' + esc(state.groupName) + '" data-input="groupName">' : "") +
+    '<div id="orderError" class="error" role="alert"></div>' +
+    '<div class="carry" style="margin:0 0 10px">' + state.civilians + ' Civilian' + (state.civilians === 1 ? "" : "s") + ' · ' + state.agents + ' Undercover Agent' + (state.agents === 1 ? "" : "s") + '</div>' +
+    '<button type="button" class="btn btn-primary btn-xl pulse" data-action="startFromOrder">🎭 START GAME</button>' +
+    '<div style="height:10px"></div><button type="button" class="btn btn-ghost btn-block" data-action="goHome">← Back to setup</button>' +
+    '</section></div>';
+}
+
+function viewDeal() {
+  const total = state.players.length;
+  const seenCount = state.seen.length;
+  const now = currentDealPlayer();
+  const pickable = state.dealStage === "pick";
+  const pills = state.players.map(function (p) {
+    const seen = state.seen.indexOf(p.id) !== -1;
+    const isNow = !seen && now && now.id === p.id;
+    return '<span class="seat-pill ' + (seen ? "seen" : isNow ? "now" : "") + '">' + avatar(p.name) + esc(p.name) +
+      ' <span class="st">' + (seen ? "✓ WORD SEEN" : isNow ? "👉 NOW" : "WAITING") + '</span></span>';
+  }).join("");
+  const cards = state.cardOwners.map(function (owner, i) {
+    if (owner !== null) {
+      return '<button type="button" class="deck-card used" disabled aria-label="Card ' + (i + 1) + ' already used">' +
+        '<span class="card-face"><span class="glyph">🔒</span><span class="num">USED</span><span class="who">' + esc(nameOf(owner)) + '</span></span></button>';
+    }
+    return '<button type="button" class="deck-card" style="animation-delay:' + (i * 45) + 'ms" data-action="pickCard" data-card="' + i + '"' + (pickable ? "" : " disabled") +
+      ' aria-label="Face-down card ' + (i + 1) + '"><span class="card-face card-back"><span class="glyph">🎭</span><span class="num">#' + (i + 1) + '</span></span></button>';
+  }).join("");
+  return '<div class="screen">' +
+    '<section class="panel">' +
+    '<div class="kicker">Round ' + state.round + ' · Secret words</div>' +
+    '<h2>' + (pickable && now ? esc(now.name) + ', pick a card' : "🃏 Pass & pick") + '</h2>' +
+    '<div class="progress" aria-hidden="true"><i style="width:' + Math.round(seenCount / total * 100) + '%"></i></div>' +
+    '<div class="progress-label" id="progressLabel">' + seenCount + ' / ' + total + ' players have seen their word</div>' +
+    '<div class="instruct"><b>📱 Pass the phone to your player.</b><ul>' +
+    '<li>Tap OK only when <b>your</b> name appears.</li><li>Pick any face‑down card and look at your secret word.</li>' +
+    '<li>Remember it.</li><li>Hide it before passing the phone.</li></ul>' +
+    '<div class="secret-note">🤫 Your role is secret. You will not be told whether you are Civilian or Undercover.</div></div>' +
+    '<div class="seat-strip">' + pills + '</div>' +
+    '<div class="deck ' + (pickable ? "pickable" : "") + '" id="deck">' + cards + '</div>' +
+    '</section></div>';
+}
+
+function viewDiscussion() {
+  const starter = playerById(state.starter);
+  const flow = state.speakingOrder.map(function (id, k) {
+    const nm = nameOf(id);
+    return '<li class="' + (k === 0 ? "first" : "") + '" style="animation-delay:' + (k * 60) + 'ms"><span class="pos">' + (k + 1) + '</span>' + avatar(nm) + '<span>' + esc(nm) + '</span>' +
+      (k === 0 ? '<span class="tag">STARTS</span>' : k === 1 ? '<span class="tag" style="color:var(--violet3)">NEXT</span>' : "") + '</li>';
+  }).join("");
+  return '<div class="screen"><section class="panel">' +
+    '<div class="kicker">Round ' + state.round + ' · Everyone has their word</div>' +
+    '<div class="starter-hero"><h2>🎯 WHO STARTS?</h2>' + avatar(starter.name) +
+    '<div class="starter-name">' + esc(starter.name) + '</div>' +
+    '<p class="muted" style="margin-top:6px">starts the discussion. Give the first clue.</p></div>' +
+    '<h3 style="margin-top:12px">🔁 Clue order</h3>' +
+    '<ol class="order-flow">' + flow + '</ol>' +
+    '<p class="loop-note">…then back to ' + esc(starter.name) + '. Keep going round until you\u2019re ready to vote.</p>' +
+    '<div class="instruct">💡 One short clue each. Don\u2019t say your word. If the clues don\u2019t fit your word, you might be the Undercover — blend in!</div>' +
+    '<button type="button" class="btn btn-primary btn-xl" data-action="startVoting">🗳️ START VOTING</button>' +
+    '</section></div>';
+}
+
+function viewVote() {
+  const limit = civilianLossLimit();
+  const lost = state.eliminated.length;
+  const lives = Array.from({ length: limit }, function (_, k) { return k < lost ? "💀" : "🙂"; }).join("");
+  const rows = state.players.map(function (p) {
+    const out = state.eliminated.indexOf(p.id) !== -1;
+    return '<button type="button" class="vote-btn' + (out ? " out" : "") + '" data-action="vote" data-id="' + p.id + '"' + (out ? " disabled" : "") + '>' +
+      avatar(p.name, "lg") + '<span class="nm">' + esc(p.name) + '</span>' +
+      (out ? '<span class="badge bad">❌ CIVILIAN</span>' : '<span class="go">VOTE ›</span>') + '</button>';
+  }).join("");
+  return '<div class="screen"><section class="panel">' +
+    '<div class="kicker">Round ' + state.round + ' · Vote ' + (state.votes.length + 1) + '</div>' +
+    '<h2>🗳️ Who do you suspect?</h2>' +
+    '<p class="muted">Discuss, agree on <b>one</b> player, then tap their name. Their role is revealed only after the vote.</p>' +
+    '<div class="vote-status">' +
+    '<div class="stat"><b>' + state.agents + '</b><span>UNDERCOVER HIDING</span></div>' +
+    '<div class="stat"><b>' + lost + ' / ' + limit + '</b><span>CIVILIANS LOST</span><div class="lives" aria-hidden="true">' + lives + '</div></div>' +
+    '</div>' +
+    '<div class="vote-list">' + rows + '</div>' +
+    '<p class="hint">Catch any Undercover Agent and Civilians win. Lose ' + limit + ' Civilian' + (limit === 1 ? "" : "s") + ' and the Undercover wins.</p>' +
+    '</section></div>';
+}
+
+function scoreboardHTML(highlightNames) {
+  const names = Object.keys(state.scores);
+  if (!names.length) return '<div class="empty">No rounds played yet. Scores appear here after the first round.</div>';
+  const sorted = names.sort(function (a, b) { return state.scores[b].points - state.scores[a].points || a.localeCompare(b); });
+  const top = state.scores[sorted[0]].points;
+  const hl = highlightNames || {};
+  const rows = sorted.map(function (n) {
+    const s = state.scores[n];
+    return '<tr class="' + (s.points === top && top > 0 ? "lead " : "") + (hl[n] ? "gain" : "") + '"><td><div class="who">' + avatar(n) + '<span>' + esc(n) + (s.points === top && top > 0 ? " 👑" : "") + '</span></div></td>' +
+      '<td class="pts">' + s.points + '</td><td>' + s.civilianWins + '</td><td>' + s.undercoverWins + '</td></tr>';
+  }).join("");
+  return '<table class="board"><thead><tr><th>Player</th><th>Pts</th><th>🙂 Wins</th><th>🕵️ Wins</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="stats3"><div class="stat"><b>' + state.round + '</b><span>ROUND</span></div>' +
+    '<div class="stat"><b>' + state.civilianWins + '</b><span>CIVILIAN WINS</span></div>' +
+    '<div class="stat"><b>' + state.undercoverWins + '</b><span>UNDERCOVER WINS</span></div></div>';
+}
+
+function viewResult() {
+  const civWin = state.winner === "civilians";
+  const agents = agentIds();
+  const lost = state.eliminated.filter(function (id) { return state.roles[id] === "civilian"; }).length;
+  const sub = civWin
+    ? '<b>' + esc(nameOf(state.caughtAgent)) + '</b> was an Undercover Agent.'
+    : numberWord(lost) + ' civilian' + (lost === 1 ? " was" : "s were") + ' eliminated.';
+  const pts = Object.keys(state.roundPoints).map(function (n) {
+    return '<span class="pt">' + avatar(n) + esc(n) + ' <span class="plus">+' + state.roundPoints[n] + '</span></span>';
+  }).join("");
+  return '<div class="screen">' +
+    '<div class="result-banner ' + (civWin ? "civ" : "uc") + '" role="status">' +
+    '<div class="big">' + (civWin ? "🎉 CIVILIANS WIN!" : "🕵️ UNDERCOVER WINS!") + '</div><p>' + sub + '</p></div>' +
+    '<section class="panel">' +
+    '<div class="kicker">Round ' + state.round + ' revealed</div>' +
+    '<div class="words-reveal"><div class="wr"><span>🙂 Civilian word</span><b>' + esc(state.currentPair[0]) + '</b></div>' +
+    '<div class="wr uc"><span>🕵️ Undercover word</span><b>' + esc(state.currentPair[1]) + '</b></div></div>' +
+    '<h3 class="center">🕵️ The Undercover Agent' + (agents.length === 1 ? "" : "s") + '</h3>' +
+    '<div class="agent-list">' + agents.map(function (id) { return '<span class="pt">' + avatar(nameOf(id)) + esc(nameOf(id)) + (state.eliminated.indexOf(id) !== -1 ? " 🎯" : "") + '</span>'; }).join("") + '</div>' +
+    '<h3 style="margin-top:14px">✨ Points this round</h3><div class="points-list">' + pts + '</div>' +
+    '</section>' +
+    '<section class="panel"><h2>🏆 SCOREBOARD</h2>' + scoreboardHTML(state.roundPoints) + '</section>' +
+    '<div class="stack">' +
+    '<button type="button" class="btn btn-primary btn-xl pulse" data-action="newRound">✨ NEW ROUND</button>' +
+    '<div class="row"><button type="button" class="btn" data-action="changePlayers">⚙️ Change players</button>' +
+    '<button type="button" class="btn btn-danger" data-action="openClear">🗑️ CLEAR GAME</button></div>' +
+    '</div></div>';
+}
+
+const views = { setup: viewSetup, groups: viewGroups, names: viewNames, order: viewOrder, deal: viewDeal, discussion: viewDiscussion, vote: viewVote, result: viewResult };
+
+/* ---- overlays / modals ---- */
+function viewOverlay() {
+  if (state.screen === "deal" && state.dealStage === "handoff") {
+    const p = currentDealPlayer();
+    if (p) {
+      return '<div class="overlay solid" role="dialog" aria-modal="true" aria-labelledby="handoffTitle"><div class="sheet center">' +
+        '<svg class="phone-anim" viewBox="0 0 84 84" aria-hidden="true"><g class="ph"><rect x="28" y="12" width="28" height="52" rx="6" fill="#a78bfa"/><rect x="31" y="18" width="22" height="38" rx="3" fill="#1a1433"/><circle cx="42" cy="59" r="2" fill="#1a1433"/></g><path d="M14 70 Q42 82 70 70" stroke="#e879f9" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="4 5"/></svg>' +
+        '<div class="kicker">' + state.seen.length + ' / ' + state.players.length + ' have seen their word</div>' +
+        '<p class="muted" style="margin:10px 0 0">📱 Pass the phone to</p>' +
+        '<div class="handoff-name" id="handoffTitle">' + esc(p.name) + '</div>' +
+        '<p class="muted">Only <b>' + esc(p.name) + '</b> should look at the screen now.</p>' +
+        '<div class="actions"><button type="button" class="btn btn-primary btn-xl" data-action="confirmHandoff">👋 I\u2019m ' + esc(p.name) + ' — OK</button></div>' +
+        '</div></div>';
+    }
+  }
+  if (state.screen === "deal" && state.dealStage === "reveal") {
+    const r = revealContent();
+    const len = r.word.length;
+    const size = len > 16 ? "s" : len > 9 ? "m" : "";
+    return '<div class="overlay solid" role="dialog" aria-modal="true" aria-label="Your secret word"><div class="reveal-stage">' +
+      '<div class="reveal-card"><div class="face backface" aria-hidden="true">🎭</div>' +
+      '<div class="face front">' +
+      '<div class="rv-name">' + avatar(r.name) + esc(r.name) + '</div>' +
+      '<div class="rv-label">your secret word</div>' +
+      '<div class="rv-word ' + size + '" id="secretWord">' + esc(r.word) + '</div>' +
+      '<div class="rv-tip">Remember it. Don\u2019t say it out loud.</div>' +
+      '</div></div>' +
+      '<div class="reveal-actions"><button type="button" class="btn btn-primary btn-xl" data-action="hideReveal">🙈 Hide Word &amp; Pass Phone</button></div>' +
+      '</div></div>';
+  }
+  return "";
+}
+
+function viewModal() {
+  const m = state.modal;
+  if (!m) return "";
+  let body = "";
+  if (m.type === "scores") {
+    body = '<h2>🏆 SCOREBOARD</h2>' + scoreboardHTML() +
+      '<div class="actions"><button type="button" class="btn btn-primary" data-action="closeModal">Close</button></div>';
+  } else if (m.type === "clear") {
+    body = '<div class="big-emoji">🗑️</div><h2>Clear game?</h2><p class="center">Clear all game progress and scores?</p>' +
+      '<label class="check-row"><input type="checkbox" id="forgetGroups"> Also forget saved player groups on this device</label>' +
+      '<div class="actions"><button type="button" class="btn" data-action="closeModal">Cancel</button>' +
+      '<button type="button" class="btn btn-danger" data-action="confirmClear">Clear Everything</button></div>';
+  } else if (m.type === "confirmVote") {
+    body = '<div class="big-emoji">🗳️</div><h2>Vote out ' + esc(nameOf(m.id)) + '?</h2><p class="center muted">Make sure the group agrees. Their role is revealed right after.</p>' +
+      '<div class="actions"><button type="button" class="btn" data-action="closeModal">Cancel</button>' +
+      '<button type="button" class="btn btn-primary" data-action="confirmVote">Vote out ' + esc(nameOf(m.id)) + '</button></div>';
+  } else if (m.type === "civilianOut") {
+    body = '<div class="big-emoji">❌</div><h2>' + esc(nameOf(m.id)) + ' was a Civilian.</h2>' +
+      '<p class="center">The Undercover Agent' + (state.agents === 1 ? "" : "s") + ' survived.</p>' +
+      '<p class="center muted">' + state.eliminated.length + ' of ' + civilianLossLimit() + ' Civilians lost. You get another vote.</p>' +
+      '<div class="actions"><button type="button" class="btn btn-primary btn-xl" data-action="closeModal">🗳️ Vote again</button></div>';
+  }
+  return '<div class="overlay" role="dialog" aria-modal="true" data-backdrop="' + (m.type === "scores" ? "close" : "") + '"><div class="sheet">' + body + '</div></div>';
+}
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+let lastScreen = null;
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = views[state.screen]();
+  if (lastScreen !== state.screen) {
+    const first = app.firstElementChild;
+    if (first) first.classList.add("enter");
+    window.scrollTo(0, 0);
+    lastScreen = state.screen;
+  }
+  renderOverlays();
+  afterRender();
+}
+function renderOverlays() {
+  document.getElementById("modal-root").innerHTML = viewOverlay() + viewModal();
+  document.body.style.overflow = (viewOverlay() || state.modal) ? "hidden" : "";
+}
+function updateSetupValidation() {
+  const v = validateConfig(state.totalPlayers, state.civilians, state.agents);
+  const eq = document.getElementById("equation");
+  if (!eq) return v;
+  eq.innerHTML = equationHTML();
+  eq.className = "equation" + (v.valid ? "" : " bad");
+  document.getElementById("validation").innerHTML = validationHTML(v);
+  const start = document.getElementById("startBtn");
+  start.disabled = !v.valid;
+  start.classList.toggle("pulse", v.valid);
+  document.getElementById("autofix").hidden = v.valid;
+  return v;
+}
+function afterRender() {
+  if (state.screen === "names") {
+    const inp = document.getElementById("wizardInput");
+    if (inp) { inp.focus({ preventScroll: true }); inp.select(); }
+  }
+  if (state.screen === "order") bindDragReorder();
+  if (state.screen === "result" && state.winner === "civilians") confetti();
+}
+function toast(msg) {
+  const fx = document.getElementById("fx-root");
+  fx.innerHTML = '<div class="toast" role="status">' + esc(msg) + '</div>';
+  clearTimeout(toast.t);
+  toast.t = setTimeout(function () { fx.innerHTML = ""; }, 2700);
+}
+function confetti() {
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const colors = ["#a78bfa", "#e879f9", "#fbbf24", "#34d399", "#f472b6", "#c4b5fd"];
+  let html = '<div class="confetti" aria-hidden="true">';
+  for (let i = 0; i < 70; i++) {
+    html += '<i style="left:' + randInt(100) + 'vw;background:' + colors[i % colors.length] + ';--dx:' + (randInt(160) - 80) + 'px;--r:' + (randInt(720) - 360) +
+      'deg;animation-duration:' + (1.8 + randInt(18) / 10) + 's;animation-delay:' + (randInt(60) / 100) + 's"></i>';
+  }
+  const layer = document.createElement("div");
+  layer.innerHTML = html + "</div>";
+  const node = layer.firstChild;
+  document.body.appendChild(node);
+  setTimeout(function () { node.remove(); }, 4800);
+}
+
+/* ---- drag to reorder (pointer events: touch + mouse) ---- */
+function bindDragReorder() {
+  const list = document.getElementById("orderList");
+  if (!list) return;
+  list.querySelectorAll("[data-drag]").forEach(function (handle) {
+    handle.addEventListener("pointerdown", function (e) {
+      const from = Number(handle.dataset.drag);
+      const item = handle.closest(".order-item");
+      const items = Array.prototype.slice.call(list.children);
+      const startY = e.clientY;
+      let target = from;
+      item.classList.add("dragging");
+      try { handle.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      e.preventDefault();
+      function move(ev) {
+        const dy = ev.clientY - startY;
+        item.style.transform = "translateY(" + dy + "px)";
+        target = from;
+        items.forEach(function (el, idx) {
+          el.classList.remove("drop-target");
+          if (el === item) return;
+          const r = el.getBoundingClientRect();
+          const mid = r.top + r.height / 2;
+          if (idx > from && ev.clientY > mid) target = Math.max(target, idx);
+          if (idx < from && ev.clientY < mid) target = Math.min(target, idx);
+        });
+        if (target !== from) items[target].classList.add("drop-target");
+      }
+      function up() {
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", up);
+        handle.removeEventListener("pointercancel", up);
+        movePlayer(from, target);
+        render();
+      }
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", up);
+      handle.addEventListener("pointercancel", up);
+    });
+  });
+}
+
+/* =====================================================================
+   ACTIONS (UI -> state -> render)
+   ===================================================================== */
+const actions = {
+  goHome: function () { state.modal = null; if (["setup", "groups", "names", "order", "result"].indexOf(state.screen) === -1 && !state.roundOver) { toast("Finish or clear the current round first."); return; } state.screen = "setup"; render(); },
+  scrollTo: function (d) { const el = document.getElementById(d.target); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); },
+  step: function (d) { stepConfig(d.field, Number(d.delta)); render(); },
+  autofix: function () { autoFixConfig(); render(); },
+  startSetup: function () {
+    if (!validateConfig(state.totalPlayers, state.civilians, state.agents).valid) { updateSetupValidation(); return; }
+    if (loadGroups().length) { state.screen = "groups"; render(); } else { actions.newGroup(); }
+  },
+  newGroup: function () {
+    state.activeGroupId = null; state.groupName = "";
+    state.draftNames = generatePlayerNames(state.totalPlayers, state.players.map(function (p) { return p.name; }));
+    state.wizardIndex = 0; state.screen = "names"; render();
+  },
+  useGroup: function (d) {
+    const g = loadGroups().find(function (x) { return x.id === d.id; });
+    if (!g) return;
+    if (g.players.length !== state.totalPlayers) {
+      if (g.players.length < MIN_PLAYERS || g.players.length > MAX_PLAYERS) return;
+      state.totalPlayers = g.players.length;
+      state.agents = clampInt(state.agents, 1, g.players.length - 1);
+      state.civilians = state.totalPlayers - state.agents;
+      toast("Switched to " + state.totalPlayers + " players: " + state.civilians + " Civilians + " + state.agents + " Agent" + (state.agents === 1 ? "" : "s"));
+    }
+    setPlayersFromNames(g.players);
+    state.activeGroupId = g.id; state.groupName = g.name; state.saveGroup = true;
+    state.screen = "order"; render();
+  },
+  deleteGroup: function (d) {
+    saveGroups(loadGroups().filter(function (g) { return g.id !== d.id; }));
+    if (!loadGroups().length) { actions.newGroup(); return; }
+    render();
+  },
+  wizardNext: function () {
+    const inp = document.getElementById("wizardInput");
+    const val = (inp ? inp.value : state.draftNames[state.wizardIndex] || "").trim().slice(0, MAX_NAME_LENGTH);
+    const err = wizardSubmit(val);
+    if (err) {
+      const box = document.getElementById("wizardError");
+      if (box) box.textContent = err;
+      if (inp) inp.focus();
+      return;
+    }
+    render();
+  },
+  wizardBack: function () {
+    if (state.wizardIndex === 0) { state.screen = loadGroups().length ? "groups" : "setup"; }
+    else { state.wizardIndex -= 1; }
+    render();
+  },
+  moveUp: function (d) { movePlayer(Number(d.index), Number(d.index) - 1); render(); },
+  moveDown: function (d) { movePlayer(Number(d.index), Number(d.index) + 1); render(); },
+  toggleSave: function () { state.saveGroup = !state.saveGroup; render(); },
+  startFromOrder: function () {
+    const names = state.players.map(function (p) { return p.name.trim(); });
+    const v = validateNames(names);
+    if (!v.valid) { const box = document.getElementById("orderError"); if (box) box.textContent = v.error; return; }
+    state.players.forEach(function (p, i) { p.name = names[i]; });
+    if (state.saveGroup && !upsertCurrentGroup()) toast("Couldn\u2019t save the group on this browser — playing anyway.");
+    startRound(); render();
+  },
+  confirmHandoff: function () { if (confirmHandoff()) render(); },
+  pickCard: function (d) { if (pickCard(Number(d.card))) render(); },
+  hideReveal: function () { if (hideReveal()) render(); },
+  startVoting: function () { if (state.screen === "discussion") { state.screen = "vote"; render(); } },
+  vote: function (d) { if (canVoteFor(d.id)) { state.modal = { type: "confirmVote", id: d.id }; renderOverlays(); } },
+  confirmVote: function () {
+    const id = state.modal && state.modal.id;
+    state.modal = null;
+    const res = castVote(id);
+    if (!res) { renderOverlays(); return; }
+    if (!res.roundOver) state.modal = { type: "civilianOut", id: id };
+    render();
+  },
+  newRound: function () { if (state.roundOver) { newRound(); render(); } },
+  changePlayers: function () { state.screen = "setup"; render(); },
+  openScores: function () { state.modal = { type: "scores" }; renderOverlays(); },
+  openClear: function () { state.modal = { type: "clear" }; renderOverlays(); },
+  closeModal: function () { state.modal = null; renderOverlays(); },
+  confirmClear: function () {
+    const box = document.getElementById("forgetGroups");
+    resetGame(!!(box && box.checked));
+    lastScreen = null;
+    render();
+    toast("Game cleared. Fresh start!");
+  }
+};
+
+function wizardSubmit(rawName) {
+  const val = (rawName || "").trim().slice(0, MAX_NAME_LENGTH);
+  if (!val) return "Please type a name.";
+  const dup = state.draftNames.slice(0, state.wizardIndex).some(function (n) { return n.toLowerCase() === val.toLowerCase(); });
+  if (dup) return "\u201C" + val + "\u201D is already playing — try a different name.";
+  state.draftNames[state.wizardIndex] = val;
+  if (state.wizardIndex < state.draftNames.length - 1) {
+    state.wizardIndex += 1;
+  } else {
+    setPlayersFromNames(state.draftNames);
+    state.groupName = "";
+    state.screen = "order";
+  }
+  return "";
+}
+
+const inputs = {
+  config: function (value, d) {
+    const n = value.trim() === "" ? NaN : Number(value);
+    setConfigValue(d.field, Number.isFinite(n) ? Math.trunc(n) : NaN);
+    updateSetupValidation();
+  },
+  orderName: function (value, d) { const p = state.players[Number(d.index)]; if (p) p.name = value.slice(0, MAX_NAME_LENGTH); const box = document.getElementById("orderError"); if (box) box.textContent = ""; },
+  groupName: function (value) { state.groupName = value; }
+};
+
+/* ---- global event delegation ---- */
+document.addEventListener("click", function (e) {
+  const backdrop = e.target.classList && e.target.classList.contains("overlay") ? e.target : null;
+  if (backdrop && backdrop.dataset.backdrop === "close") { actions.closeModal(); return; }
+  const el = e.target.closest("[data-action]");
+  if (!el || el.disabled) return;
+  const fn = actions[el.dataset.action];
+  if (fn) fn(el.dataset, el, e);
+});
+document.addEventListener("input", function (e) {
+  const el = e.target.closest && e.target.closest("[data-input]");
+  if (el && inputs[el.dataset.input]) inputs[el.dataset.input](el.value, el.dataset, el);
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    const el = e.target.closest && e.target.closest("[data-enter]");
+    if (el) { e.preventDefault(); actions[el.dataset.enter](el.dataset, el, e); }
+  } else if (e.key === "Escape" && state.modal && state.modal.type !== "civilianOut") {
+    actions.closeModal();
+  }
+});
+
+/* ---- test hook (read-only access for automated checks) ---- */
+window.UNDERCOVER = {
+  get state() { return state; },
+  actions: actions, views: views, viewOverlay: viewOverlay, viewModal: viewModal,
+  logic: {
+    validateConfig: validateConfig, validateNames: validateNames, validateWordBank: validateWordBank,
+    selectWordPair: selectWordPair, selectAgents: selectAgents, shuffle: shuffle, startRound: startRound,
+    confirmHandoff: confirmHandoff, pickCard: pickCard, revealContent: revealContent, hideReveal: hideReveal,
+    selectStarter: selectStarter, castVote: castVote, civilianLossLimit: civilianLossLimit, newRound: newRound,
+    resetGame: resetGame, setPlayersFromNames: setPlayersFromNames, stepConfig: stepConfig, wizardSubmit: wizardSubmit,
+    generatePlayerNames: generatePlayerNames, agentIds: agentIds, civilianIds: civilianIds
+  },
+  WORD_BANK: WORD_BANK
+};
+
+render();
+</script>
+</body>
+</html>
